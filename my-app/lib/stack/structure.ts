@@ -11,11 +11,18 @@
     */
 }
 
+import { frontendTools } from "./frontend-tools";
+import { backendTools } from "./backend-tools";
+import { ideTools } from "./ide-tools";
+import { aiTools } from "./ai-tools";
+import { otherTools } from "./other-tools";
+
 export interface Section {
   id: SectionType;
   name: string;
   subsections?: Subsection[];
   tools?: Tool[];
+  selectedTools: Tool[];
   pinned: Tool[];
 }
 
@@ -24,13 +31,13 @@ export type SectionType = "frontend" | "backend" | "ide" | "ai" | "other";
 export interface Subsection {
   id: string;
   name: string;
-  tools: Tool[];
 }
 
 export interface Tool {
   id: string;
   name: string;
   url: string;
+  subsectionId?: string;
 }
 
 export interface Stack {
@@ -38,3 +45,41 @@ export interface Stack {
   name: string;
   stackSections: Section[];
 }
+
+export const sections: Section[] = [
+  {
+    id: "frontend",
+    name: "Frontend",
+    tools: frontendTools,
+    selectedTools: [],
+    pinned: [],
+  },
+  {
+    id: "backend",
+    name: "Backend",
+    tools: backendTools,
+    selectedTools: [],
+    pinned: [],
+  },
+  {
+    id: "ide",
+    name: "IDE",
+    tools: ideTools,
+    selectedTools: [],
+    pinned: [],
+  },
+  {
+    id: "ai",
+    name: "AI",
+    tools: aiTools,
+    selectedTools: [],
+    pinned: [],
+  },
+  {
+    id: "other",
+    name: "Other",
+    tools: otherTools,
+    selectedTools: [],
+    pinned: [],
+  },
+];

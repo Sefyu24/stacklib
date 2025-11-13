@@ -99,6 +99,7 @@ export default function AddSubsectionDialog({
               availableTools={availableTools}
               selectedTools={selectedTools}
               onToolsChange={onSelectedToolsChange}
+              keyPrefix="add-subsection-dialog"
             />
           </div>
         </div>

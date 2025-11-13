@@ -20,6 +20,7 @@ interface ToolSelectorProps {
   placeholder?: string;
   selectedLabel?: string;
   showLabel?: boolean;
+  keyPrefix?: string; // Add context for unique keys
 }
 
 export default function ToolSelector({
@@ -29,9 +30,11 @@ export default function ToolSelector({
   placeholder = "Search tools...",
   selectedLabel = "Selected Tools",
   showLabel = true,
+  keyPrefix = "default",
 }: ToolSelectorProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -77,17 +80,58 @@ export default function ToolSelector({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && searchQuery.trim()) {
-      e.preventDefault();
-      // If there's an exact match, select it; otherwise add custom
-      const exactMatch = filteredTools.find(
-        (t) => t.name.toLowerCase() === searchQuery.trim().toLowerCase()
-      );
-      if (exactMatch) {
-        handleSelect(exactMatch.id);
-      } else {
-        handleAddCustom();
+    // Calculate total options dynamically
+    const totalOptions = (showAddCustom ? 1 : 0) + filteredTools.length;
+
+    if (!isOpen) {
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        setIsOpen(true);
+        return;
       }
+    }
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => {
+        const next = prev < totalOptions - 1 ? prev + 1 : 0;
+        return next;
+      });
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIndex((prev) => {
+        const next = prev > 0 ? prev - 1 : totalOptions - 1;
+        return next;
+      });
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (highlightedIndex >= 0) {
+        // Select highlighted item
+        if (showAddCustom && highlightedIndex === 0) {
+          handleAddCustom();
+        } else {
+          const toolIndex = showAddCustom
+            ? highlightedIndex - 1
+            : highlightedIndex;
+          if (filteredTools[toolIndex]) {
+            handleSelect(filteredTools[toolIndex].id);
+          }
+        }
+      } else if (searchQuery.trim()) {
+        // If no item is highlighted, use the old behavior
+        const exactMatch = filteredTools.find(
+          (t) => t.name.toLowerCase() === searchQuery.trim().toLowerCase()
+        );
+        if (exactMatch) {
+          handleSelect(exactMatch.id);
+        } else {
+          handleAddCustom();
+        }
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setIsOpen(false);
+      setHighlightedIndex(-1);
+      inputRef.current?.blur();
     }
   };
 
@@ -120,6 +164,7 @@ export default function ToolSelector({
         !inputRef.current.contains(event.target as Node)
       ) {
         setIsOpen(false);
+        setHighlightedIndex(-1);
       }
     };
 
@@ -144,9 +189,13 @@ export default function ToolSelector({
             onChange={(e) => {
               setSearchQuery(e.target.value);
               setIsOpen(true);
+              setHighlightedIndex(-1); // Reset highlight when typing
             }}
             onKeyDown={handleKeyDown}
-            onFocus={() => setIsOpen(true)}
+            onFocus={() => {
+              setIsOpen(true);
+              setHighlightedIndex(-1);
+            }}
           />
           <InputGroupAddon align="inline-end">
             <ChevronDown
@@ -161,7 +210,7 @@ export default function ToolSelector({
         {isOpen && (
           <div
             ref={dropdownRef}
-            className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md animate-in fade-in-0 zoom-in-95"
+            className="fixed z-50 mt-1 rounded-md border bg-popover shadow-md animate-in fade-in-0 zoom-in-95"
           >
             <div className="max-h-[300px] overflow-y-auto p-1">
               {showAddCustom && (
@@ -170,7 +219,8 @@ export default function ToolSelector({
                   className={cn(
                     "flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm",
                     "hover:bg-accent hover:text-accent-foreground",
-                    "transition-colors border-b"
+                    "transition-colors border-b",
+                    highlightedIndex === 0 && "bg-accent text-accent-foreground"
                   )}
                 >
                   <Plus className="h-4 w-4 text-muted-foreground" />
@@ -188,20 +238,25 @@ export default function ToolSelector({
                     : "Start typing to search..."}
                 </div>
               ) : (
-                filteredTools.map((tool) => (
-                  <div
-                    key={tool.id}
-                    onClick={() => handleSelect(tool.id)}
-                    className={cn(
-                      "flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm",
-                      "hover:bg-accent hover:text-accent-foreground",
-                      "transition-colors"
-                    )}
-                  >
-                    <LogoFramework url={tool.url} name={tool.name} />
-                    <span className="truncate">{tool.name}</span>
-                  </div>
-                ))
+                filteredTools.map((tool, index) => {
+                  const itemIndex = showAddCustom ? index + 1 : index;
+                  return (
+                    <div
+                      key={tool.id}
+                      onClick={() => handleSelect(tool.id)}
+                      className={cn(
+                        "flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm",
+                        "hover:bg-accent hover:text-accent-foreground",
+                        "transition-colors",
+                        highlightedIndex === itemIndex &&
+                          "bg-accent text-accent-foreground"
+                      )}
+                    >
+                      <LogoFramework url={tool.url} name={tool.name} />
+                      <span className="truncate">{tool.name}</span>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
@@ -216,7 +271,7 @@ export default function ToolSelector({
           <div className="flex flex-wrap gap-2">
             {selectedTools.map((tool) => (
               <div
-                key={tool.id}
+                key={`${keyPrefix}-${tool.id}`}
                 className={cn(
                   "inline-flex items-center gap-2 rounded-md border bg-card px-3 py-1.5 text-sm",
                   "hover:bg-accent transition-colors"

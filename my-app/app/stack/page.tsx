@@ -7,13 +7,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import SectionComp from "@/components/sections/section";
-import { frontendTools } from "@/lib/stack/frontend-tools";
-import { backendTools } from "@/lib/stack/backend-tools";
-import { ideTools } from "@/lib/stack/ide-tools";
-import { aiTools } from "@/lib/stack/ai-tools";
-import { otherTools } from "@/lib/stack/other-tools";
-import { useState, useMemo } from "react";
-import { Subsection, Tool, SectionType, Section } from "@/lib/stack/structure";
+import { useState } from "react";
+import {
+  Section,
+  Tool,
+  SectionType,
+  sections as defaultSections,
+} from "@/lib/stack/structure";
 import {
   Accordion,
   AccordionContent,
@@ -21,49 +21,11 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import AddSubsectionDialog from "@/components/add-subsection-dialog";
+import PinnedTools from "@/components/pinnedComps/pinnedTools";
 
 export default function Stackshare() {
-  const sections: Section[] = [
-    {
-      id: "frontend",
-      name: "Frontend",
-      tools: frontendTools,
-      pinned: [],
-    },
-    {
-      id: "backend",
-      name: "Backend",
-      tools: backendTools,
-      pinned: [],
-    },
-    {
-      id: "ide",
-      name: "IDE",
-      tools: ideTools,
-      pinned: [],
-    },
-    {
-      id: "ai",
-      name: "AI",
-      tools: aiTools,
-      pinned: [],
-    },
-    {
-      id: "other",
-      name: "Other",
-      tools: otherTools,
-      pinned: [],
-    },
-  ];
-  const [subsections, setSubsections] = useState<
-    Record<SectionType, Subsection[]>
-  >({
-    frontend: [],
-    backend: [],
-    ide: [],
-    ai: [],
-    other: [],
-  });
+  // Initialize sections with selectedTools
+  const [sections, setSections] = useState<Section[]>(defaultSections);
 
   const [openSections, setOpenSections] = useState<string[]>(["frontend"]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -71,56 +33,123 @@ export default function Stackshare() {
   const [newSubsectionName, setNewSubsectionName] = useState("");
   const [selectedTools, setSelectedTools] = useState<Tool[]>([]);
 
-  function getToolsForSection(section: SectionType): Tool[] {
-    return sections.find((s) => s.id === section)?.tools ?? [];
+  function getSectionById(sectionId: SectionType): Section | undefined {
+    return sections.find((s) => s.id === sectionId);
   }
 
-  function getSubsectionsForSection(section: SectionType): Subsection[] {
-    return subsections[section] ?? [];
-  }
-
-  function setSubsectionsForSection(
-    section: SectionType,
-    newSubsections: Subsection[]
+  function updateSection(
+    sectionId: SectionType,
+    updater: (section: Section) => Section
   ) {
-    setSubsections((prev) => ({
-      ...prev,
-      [section]: newSubsections,
-    }));
+    setSections((prevSections) =>
+      prevSections.map((section) =>
+        section.id === sectionId ? updater(section) : section
+      )
+    );
+  }
+
+  function handleToolsChange(sectionId: SectionType, subsectionId?: string) {
+    return (newTools: Tool[]) => {
+      updateSection(sectionId, (section) => {
+        // Remove tools for this section/subsection context
+        const otherTools = section.selectedTools.filter((t) => {
+          if (subsectionId) {
+            return t.subsectionId !== subsectionId;
+          } else {
+            return t.subsectionId !== undefined;
+          }
+        });
+
+        // Add new tools with proper subsectionId
+        const updatedTools = newTools.map((t) => ({
+          ...t,
+          subsectionId,
+        }));
+
+        return {
+          ...section,
+          selectedTools: [...otherTools, ...updatedTools],
+        };
+      });
+    };
   }
 
   function addSubSection() {
     if (!newSubsectionName.trim()) return;
 
-    const newSubsection: Subsection = {
-      id: `subsection-${Date.now()}`,
-      name: newSubsectionName.trim(),
-      tools: selectedTools,
-    };
+    const newSubsectionId = `subsection-${Date.now()}`;
 
-    const currentSubsections = getSubsectionsForSection(dialogSection);
-    setSubsectionsForSection(dialogSection, [
-      ...currentSubsections,
-      newSubsection,
-    ]);
+    updateSection(dialogSection, (section) => {
+      const newSubsection = {
+        id: newSubsectionId,
+        name: newSubsectionName.trim(),
+      };
+
+      // Add selected tools with subsectionId
+      const toolsWithSubsectionId = selectedTools.map((tool) => ({
+        ...tool,
+        subsectionId: newSubsectionId,
+      }));
+
+      return {
+        ...section,
+        subsections: [...(section.subsections || []), newSubsection],
+        selectedTools: [...section.selectedTools, ...toolsWithSubsectionId],
+      };
+    });
+
     setNewSubsectionName("");
     setSelectedTools([]);
     setIsDialogOpen(false);
   }
 
-  function removeSubSection(section: SectionType, subsectionId: string) {
-    const currentSubsections = getSubsectionsForSection(section);
-    setSubsectionsForSection(
-      section,
-      currentSubsections.filter((subsection) => subsection.id !== subsectionId)
-    );
+  function removeSubSection(sectionId: SectionType, subsectionId: string) {
+    updateSection(sectionId, (section) => ({
+      ...section,
+      subsections:
+        section.subsections?.filter((sub) => sub.id !== subsectionId) || [],
+      selectedTools: section.selectedTools.filter(
+        (t) => t.subsectionId !== subsectionId
+      ),
+    }));
   }
 
   function handleAccordionChange(value: string[]) {
     setOpenSections(value);
   }
+
+  function onToggle(
+    sectionId: SectionType,
+    toolId: string,
+    subsectionId?: string
+  ) {
+    updateSection(sectionId, (section) => {
+      // Find the specific tool instance based on both toolId and subsectionId
+      const tool = section.selectedTools.find(
+        (t) => t.id === toolId && t.subsectionId === subsectionId
+      );
+      if (!tool) return section;
+
+      // Check if this specific instance is pinned (match both id and subsectionId)
+      const isPinned = section.pinned.some(
+        (t) => t.id === tool.id && t.subsectionId === subsectionId
+      );
+
+      const updatedPinned = isPinned
+        ? section.pinned.filter(
+            (t) => !(t.id === toolId && t.subsectionId === subsectionId)
+          )
+        : [...section.pinned, tool];
+
+      return {
+        ...section,
+        pinned: updatedPinned,
+      };
+    });
+  }
+
   return (
-    <div className="m-8 flex justify-center ">
+    <div className="m-8 justify-center ">
       <Card className="p-6 border-4 max-w-4xl w-full">
         <CardTitle className="">
           <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight text-balance">
@@ -147,7 +176,7 @@ export default function Stackshare() {
               onSubsectionNameChange={setNewSubsectionName}
               selectedTools={selectedTools}
               onSelectedToolsChange={setSelectedTools}
-              availableTools={getToolsForSection(dialogSection)}
+              availableTools={getSectionById(dialogSection)?.tools || []}
               onSubmit={addSubSection}
             />
           </div>
@@ -168,9 +197,13 @@ export default function Stackshare() {
                     id={section.id}
                     name={section.name}
                     tools={section.tools}
-                    subsections={getSubsectionsForSection(section.id)}
+                    selectedTools={section.selectedTools}
+                    subsections={section.subsections}
                     onDeleteSubsection={(id) =>
                       removeSubSection(section.id, id)
+                    }
+                    onToolsChange={(tools, subsectionId) =>
+                      handleToolsChange(section.id, subsectionId)(tools)
                     }
                   />
                 </AccordionContent>
@@ -179,6 +212,8 @@ export default function Stackshare() {
           </Accordion>
         </CardContent>
       </Card>
+
+      <PinnedTools sections={sections} onToggleUpdate={onToggle} />
     </div>
   );
 }

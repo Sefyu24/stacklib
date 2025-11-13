@@ -1,22 +1,26 @@
 "use client";
 import { Subsection, Tool } from "@/lib/stack/structure";
 import { Button } from "../ui/button";
-import { useState } from "react";
 import ToolSelector from "../tools/tool";
 import { Trash } from "lucide-react";
 
 interface SubsectionCompProps extends Subsection {
+  tools: Tool[];
+  availableTools: Tool[];
   onDelete?: (subsectionId: string) => void;
+  onToolsChange?: (tools: Tool[]) => void;
+  keyPrefix?: string;
 }
 
 export default function SubsectionComp({
   id,
   name,
   tools,
+  availableTools,
   onDelete,
+  onToolsChange,
+  keyPrefix,
 }: SubsectionCompProps) {
-  const [selectedTools, setSelectedTools] = useState<Tool[]>(tools ?? []);
-
   return (
     <div className="mb-4">
       <div className="flex items-center justify-between mb-2">
@@ -34,9 +38,10 @@ export default function SubsectionComp({
       </div>
       <div>
         <ToolSelector
-          availableTools={tools ?? []}
-          selectedTools={selectedTools}
-          onToolsChange={setSelectedTools}
+          availableTools={availableTools}
+          selectedTools={tools}
+          onToolsChange={onToolsChange || (() => {})}
+          keyPrefix={keyPrefix}
         />
       </div>
     </div>
