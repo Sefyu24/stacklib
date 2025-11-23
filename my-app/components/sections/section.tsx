@@ -1,80 +1,46 @@
 "use client";
 
-import { Section, Tool } from "@/lib/stack/structure";
 import ToolSelector from "../tools/tool";
-import SubsectionComp from "../subsections/subsection";
-import { Separator } from "@/components/ui/separator";
+import { Doc, Id } from "@/convex/_generated/dataModel";
+import { api } from "@/convex/_generated/api";
+import { FunctionReturnType } from "convex/server";
+import { useQuery } from "convex/react";
 
-interface SectionCompProps extends Omit<Section, "pinned"> {
-  onDeleteSubsection?: (subsectionId: string) => void;
-  onToolsChange?: (tools: Tool[], subsectionId?: string) => void;
+// Infer the exact type from the getStack query return type
+type StackData = FunctionReturnType<typeof api.stacks.getStack>;
+type Section = StackData["sections"][number];
+
+interface SectionCompProps {
+  section: Section;
+  onToolsChange?: (toolIds: Id<"tools">[]) => void;
+  onTogglePin?: (toolId: Id<"tools">) => void;
 }
 
 export default function SectionComp({
-  subsections,
-  tools,
-  selectedTools,
-  onDeleteSubsection,
+  section,
   onToolsChange,
+  onTogglePin,
 }: SectionCompProps) {
-  // Filter tools that belong directly to the section (no subsectionId)
-  const sectionLevelTools = selectedTools.filter((t) => !t.subsectionId);
+  // Fetch all available tools for this section's category
+  const availableTools = useQuery(
+    api.stacks.getToolsByCategory,
+    { category: section.sectionType as any }
+  );
+
+  // Extract just the tool objects from selectedTools
+  const selectedTools = section.selectedTools.map((st) => st.tool);
 
   return (
-    <div className="space-y-6">
-      {/* Section-level tools - shown at root level */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Separator className="flex-1" />
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            General Tools
-          </span>
-          <Separator className="flex-1" />
-        </div>
-        <div className="grid gap-4">
-          <ToolSelector
-            availableTools={tools ?? []}
-            selectedTools={sectionLevelTools}
-            onToolsChange={(tools) => onToolsChange?.(tools)}
-            keyPrefix="section-general"
-          />
-        </div>
-      </div>
-
-      {/* Show subsections if they exist - with clear visual hierarchy */}
-      {subsections && subsections.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Separator className="flex-1" />
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Subsections
-            </span>
-            <Separator className="flex-1" />
-          </div>
-          <div className="ml-4 space-y-4 border-l-2 border-muted pl-4">
-            {subsections.map((subsection) => {
-              // Filter tools for this specific subsection
-              const subsectionTools = selectedTools.filter(
-                (t) => t.subsectionId === subsection.id
-              );
-              return (
-                <SubsectionComp
-                  id={subsection.id}
-                  name={subsection.name}
-                  tools={subsectionTools}
-                  key={subsection.id}
-                  onDelete={onDeleteSubsection}
-                  onToolsChange={(tools) =>
-                    onToolsChange?.(tools, subsection.id)
-                  }
-                  availableTools={tools ?? []}
-                  keyPrefix={`subsection-${subsection.id}`}
-                />
-              );
-            })}
-          </div>
-        </div>
-      )}
+    <div className="space-y-4">
+      <ToolSelector
+        availableTools={availableTools || []}
+        selectedTools={selectedTools}
+        onToolsChange={(tools) => {
+          const toolIds = tools.map((t) => t._id);
+          onToolsChange?.(toolIds);
+        }}
+        keyPrefix={`section-${section._id}`}
+      />
     </div>
   );
 }

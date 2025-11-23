@@ -6,28 +6,21 @@ import {
   CardTitle,
   CardDescription,
 } from "../ui/card";
-import { Section } from "@/lib/stack/structure";
 import { Toggle } from "../ui/toggle";
 import { Pin } from "lucide-react";
-import { SectionType } from "@/lib/stack/structure";
+import { Id } from "@/convex/_generated/dataModel";
+import { api } from "@/convex/_generated/api";
+import { FunctionReturnType } from "convex/server";
 
-// Criterias
-
-{
-  /*
-    1. List all tools of each section
-    2. Condition: Pin up to 5 tools for each section 
-    3. If section has less than 5 tools: Pin them automatically and let user remove if want
-    4. 
-    */
-}
+// Infer types from the getStack query
+type StackData = FunctionReturnType<typeof api.stacks.getStack>;
+type Section = StackData["sections"][number];
 
 interface PinnedToolsProps {
   sections: Section[];
   onToggleUpdate: (
-    sectionId: SectionType,
-    toolId: string,
-    subsectionId?: string
+    sectionId: Id<"sections">,
+    toolId: Id<"tools">
   ) => void;
 }
 
@@ -47,20 +40,19 @@ export default function PinnedTools({
           <CardContent>
             <p>Here are each sections</p>
             {sections.map((section) => (
-              <div key={section.id} className="m-4">
+              <div key={section._id} className="m-4">
                 <h3 className="font-semibold mb-2">{section.name}</h3>
                 <div className="flex flex-wrap gap-2">
-                  {section.selectedTools?.map((tool) => {
-                    // Check if this specific instance is pinned (match both id and subsectionId)
-                    const isPinned = section.pinned.some(
-                      (t) =>
-                        t.id === tool.id && t.subsectionId === tool.subsectionId
+                  {section.selectedTools?.map((selectedTool) => {
+                    // Check if this tool is pinned
+                    const isPinned = section.pinnedTools?.some(
+                      (pt) => pt.toolId === selectedTool.toolId
                     );
 
-                    // Create unique key using subsectionId context
-                    const uniqueKey = tool.subsectionId
-                      ? `${tool.subsectionId}-${tool.id}`
-                      : `section-${tool.id}`;
+                    // Create unique key
+                    const uniqueKey = selectedTool.subsectionId
+                      ? `${selectedTool.subsectionId}-${selectedTool.toolId}`
+                      : `section-${selectedTool.toolId}`;
 
                     return (
                       <Toggle
@@ -70,11 +62,11 @@ export default function PinnedTools({
                         variant={"outline"}
                         pressed={isPinned}
                         onPressedChange={() =>
-                          onToggleUpdate(section.id, tool.id, tool.subsectionId)
+                          onToggleUpdate(section._id, selectedTool.toolId)
                         }
                         className="data-[state=on]:bg-transparent data-[state=on]:*:[svg]:fill-blue-500 data-[state=on]:*:[svg]:stroke-blue-500"
                       >
-                        <Pin /> {tool.name}
+                        <Pin /> {selectedTool.tool.name}
                       </Toggle>
                     );
                   })}

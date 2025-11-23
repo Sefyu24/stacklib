@@ -12,6 +12,8 @@ export default defineSchema({
       v.literal("ai"),
       v.literal("other")
     ),
+    toolUrl: v.optional(v.string()),
+    toolDescription: v.optional(v.string()),
   }).index("by_category", ["category"]),
 
   stacks: defineTable({
@@ -30,23 +32,18 @@ export default defineSchema({
       v.literal("other")
     ),
     name: v.string(),
+    order: v.number(),
   })
     .index("by_stackId", ["stackId"])
     .index("by_stackId_and_sectionType", ["stackId", "sectionType"]),
 
-  subsections: defineTable({
-    sectionId: v.id("sections"),
-    name: v.string(),
-  }).index("by_sectionId", ["sectionId"]),
-
   selectedTools: defineTable({
     sectionId: v.id("sections"),
     toolId: v.id("tools"),
-    subsectionId: v.optional(v.id("subsections")),
   })
     .index("by_sectionId", ["sectionId"])
-    .index("by_subsectionId", ["subsectionId"])
-    .index("by_toolId", ["toolId"]),
+    .index("by_toolId", ["toolId"])
+    .index("by_sectionId_and_toolId", ["sectionId", "toolId"]),
 
   pinnedTools: defineTable({
     sectionId: v.id("sections"),
