@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/input-group";
 import { Button } from "@/components/ui/button";
 import LogoFramework from "@/app/stack/logo-framework";
-import { X, ChevronDown, Search, Plus } from "lucide-react";
+import { X, ChevronDown, Search, Plus, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Doc, Id } from "@/convex/_generated/dataModel";
@@ -16,39 +16,124 @@ import { Doc, Id } from "@/convex/_generated/dataModel";
 // Use Convex Doc type for tools
 type Tool = Doc<"tools">;
 
+type ToolCategory = "frontend" | "backend" | "ide" | "ai" | "other";
+
+interface BrandfetchBrand {
+  icon: string | null;
+  name: string | null;
+  domain: string;
+  claimed: boolean;
+  brandId: string;
+}
+
 interface ToolSelectorProps {
-  availableTools: Tool[];
   selectedTools: Tool[];
   onToolsChange: (tools: Tool[]) => void;
   placeholder?: string;
   selectedLabel?: string;
   showLabel?: boolean;
   keyPrefix?: string;
+  category?: ToolCategory;
 }
 
 export default function ToolSelector({
-  availableTools,
   selectedTools,
   onToolsChange,
   placeholder = "Search tools...",
   selectedLabel = "Selected Tools",
   showLabel = true,
   keyPrefix = "default",
+  category = "other",
 }: ToolSelectorProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [searchResults, setSearchResults] = useState<BrandfetchBrand[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSelect = (toolId: Id<"tools">) => {
-    const tool = availableTools.find((t) => t._id === toolId);
-    if (tool && !selectedTools.find((t) => t._id === toolId)) {
-      onToolsChange([...selectedTools, tool]);
+  // Search Brandfetch API with debouncing
+  useEffect(() => {
+    // Clear previous timeout
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    // Don't search if query is too short or empty
+    if (!searchQuery.trim() || searchQuery.trim().length < 2) {
+      setSearchResults([]);
+      setIsLoading(false);
+      setSearchError(null);
+      return;
+    }
+
+    setIsLoading(true);
+    setSearchError(null);
+
+    // Debounce the API call
+    debounceTimeoutRef.current = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/brandfetch/search?name=${encodeURIComponent(searchQuery.trim())}`
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to search brands");
+        }
+
+        const data: BrandfetchBrand[] = await response.json();
+        setSearchResults(data);
+      } catch (error) {
+        console.error("Error searching brands:", error);
+        setSearchError(
+          error instanceof Error ? error.message : "Failed to search brands"
+        );
+        setSearchResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 400); // 400ms debounce
+
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  const handleSelectBrand = (brand: BrandfetchBrand) => {
+    // Check if already selected
+    const alreadySelected = selectedTools.find(
+      (t) => t.name.toLowerCase() === (brand.name || "").toLowerCase()
+    );
+    if (alreadySelected) {
       setSearchQuery("");
       setIsOpen(false);
-      inputRef.current?.blur();
+      return;
     }
+
+    // Create tool object from Brandfetch result
+    const tool: Tool = {
+      _id: `brandfetch-${brand.brandId}` as Id<"tools">,
+      _creationTime: Date.now(),
+      name: brand.name || brand.domain,
+      url: brand.domain,
+      category: category || "other",
+    };
+
+    onToolsChange([...selectedTools, tool]);
+    setSearchQuery("");
+    setIsOpen(false);
+    setSearchResults([]);
+    inputRef.current?.blur();
+  };
+
+  const handleSelect = (brand: BrandfetchBrand) => {
+    handleSelectBrand(brand);
   };
 
   const handleAddCustom = () => {
@@ -70,15 +155,16 @@ export default function ToolSelector({
       _id: `custom-${trimmedQuery
         .toLowerCase()
         .replace(/\s+/g, "-")}` as Id<"tools">,
-      _creationTime: 0,
+      _creationTime: Date.now(),
       name: trimmedQuery,
       url: "", // Empty URL for custom entries
-      category: "other",
+      category: category || "other",
     };
 
     onToolsChange([...selectedTools, customTool]);
     setSearchQuery("");
     setIsOpen(false);
+    setSearchResults([]);
     inputRef.current?.blur();
   };
 
@@ -88,7 +174,7 @@ export default function ToolSelector({
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // Calculate total options dynamically
-    const totalOptions = (showAddCustom ? 1 : 0) + filteredTools.length;
+    const totalOptions = (showAddCustom ? 1 : 0) + searchResults.length;
 
     if (!isOpen) {
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
@@ -116,23 +202,19 @@ export default function ToolSelector({
         if (showAddCustom && highlightedIndex === 0) {
           handleAddCustom();
         } else {
-          const toolIndex = showAddCustom
+          const brandIndex = showAddCustom
             ? highlightedIndex - 1
             : highlightedIndex;
-          if (filteredTools[toolIndex]) {
-            handleSelect(filteredTools[toolIndex]._id);
+          if (searchResults[brandIndex]) {
+            handleSelect(searchResults[brandIndex]);
           }
         }
+      } else if (searchQuery.trim() && searchResults.length > 0) {
+        // If no item is highlighted, select the first result
+        handleSelect(searchResults[0]);
       } else if (searchQuery.trim()) {
-        // If no item is highlighted, use the old behavior
-        const exactMatch = filteredTools.find(
-          (t) => t.name.toLowerCase() === searchQuery.trim().toLowerCase()
-        );
-        if (exactMatch) {
-          handleSelect(exactMatch._id);
-        } else {
-          handleAddCustom();
-        }
+        // If no results, add as custom
+        handleAddCustom();
       }
     } else if (e.key === "Escape") {
       e.preventDefault();
@@ -142,21 +224,22 @@ export default function ToolSelector({
     }
   };
 
-  const availableToolsList = availableTools.filter(
-    (t) => !selectedTools.find((st) => st._id === t._id)
-  );
-
-  // Filter tools based on search query
-  const filteredTools = availableToolsList.filter((tool) =>
-    tool.name.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter out already selected brands from search results
+  const filteredResults = searchResults.filter(
+    (brand) =>
+      !selectedTools.find(
+        (t) =>
+          t.name.toLowerCase() === (brand.name || brand.domain).toLowerCase()
+      )
   );
 
   // Check if we should show "Add custom" option
   const showAddCustom =
     searchQuery.trim() &&
-    !filteredTools.find(
-      (t) => t.name.toLowerCase() === searchQuery.trim().toLowerCase()
-    ) &&
+    searchQuery.trim().length >= 2 &&
+    !isLoading &&
+    filteredResults.length === 0 &&
+    !searchError &&
     !selectedTools.find(
       (t) => t.name.toLowerCase() === searchQuery.trim().toLowerCase()
     );
@@ -220,6 +303,25 @@ export default function ToolSelector({
             className="fixed z-50 mt-1 rounded-md border bg-popover shadow-md animate-in fade-in-0 zoom-in-95"
           >
             <div className="max-h-[300px] overflow-y-auto p-1">
+              {isLoading && (
+                <div className="flex items-center justify-center gap-2 px-2 py-4 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Searching brands...</span>
+                </div>
+              )}
+
+              {searchError && !isLoading && (
+                <div className="px-2 py-1.5 text-sm text-destructive">
+                  {searchError}
+                </div>
+              )}
+
+              {!isLoading && !searchError && searchQuery.trim().length < 2 && (
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                  Start typing to search brands...
+                </div>
+              )}
+
               {showAddCustom && (
                 <div
                   key="add-custom-tool"
@@ -237,24 +339,24 @@ export default function ToolSelector({
                   </span>
                 </div>
               )}
-              {filteredTools.length === 0 && !showAddCustom && (
-                <div
-                  key="no-tools-message"
-                  className="px-2 py-1.5 text-sm text-muted-foreground"
-                >
-                  {searchQuery
-                    ? "No tools found"
-                    : availableToolsList.length === 0
-                    ? "All tools selected"
-                    : "Start typing to search..."}
-                </div>
-              )}
-              {filteredTools.map((tool, index) => {
+
+              {!isLoading &&
+                !searchError &&
+                filteredResults.length === 0 &&
+                !showAddCustom &&
+                searchQuery.trim().length >= 2 && (
+                  <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                    No brands found. Try a different search term.
+                  </div>
+                )}
+
+              {filteredResults.map((brand, index) => {
                 const itemIndex = showAddCustom ? index + 1 : index;
+                const brandName = brand.name || brand.domain;
                 return (
                   <div
-                    key={`${keyPrefix}-dropdown-${tool._id}`}
-                    onClick={() => handleSelect(tool._id)}
+                    key={`${keyPrefix}-dropdown-${brand.brandId}`}
+                    onClick={() => handleSelect(brand)}
                     className={cn(
                       "flex cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm",
                       "hover:bg-accent hover:text-accent-foreground",
@@ -263,8 +365,15 @@ export default function ToolSelector({
                         "bg-accent text-accent-foreground"
                     )}
                   >
-                    <LogoFramework url={tool.url} name={tool.name} />
-                    <span className="truncate">{tool.name}</span>
+                    <LogoFramework url={brand.domain} name={brandName} />
+                    <div className="flex flex-col min-w-0">
+                      <span className="truncate font-medium">{brandName}</span>
+                      {brand.domain && brand.name && (
+                        <span className="truncate text-xs text-muted-foreground">
+                          {brand.domain}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 );
               })}
