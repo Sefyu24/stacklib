@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { auth, clerkClient } from "@clerk/nextjs/server";
 import {
   NPM_TOOL_MAP,
   PYTHON_TOOL_MAP,
@@ -6,21 +7,37 @@ import {
   FILE_TOOL_MAP,
   DetectedTool,
 } from "@/lib/github/tool-map";
+import { enrichSuggestions } from "@/lib/import/match";
 
 export const runtime = "nodejs";
 
 const GITHUB_API = "https://api.github.com";
 
-function githubHeaders(): HeadersInit {
+function githubHeaders(token?: string): HeadersInit {
   const headers: Record<string, string> = {
     Accept: "application/vnd.github+json",
     "User-Agent": "superstack-app",
   };
-  // Optional: raises the rate limit from 60 to 5000 req/h
-  if (process.env.GITHUB_TOKEN) {
-    headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
-  }
+  // User token (private repos) beats the optional env token (rate limit).
+  const auth_ = token ?? process.env.GITHUB_TOKEN;
+  if (auth_) headers.Authorization = `Bearer ${auth_}`;
   return headers;
+}
+
+/** GitHub OAuth token Clerk holds for the signed-in user, if any. */
+async function getUserGithubToken(): Promise<string | undefined> {
+  try {
+    const { userId } = await auth();
+    if (!userId) return undefined;
+    const client = await clerkClient();
+    const tokens = await client.users.getUserOauthAccessToken(
+      userId,
+      "oauth_github"
+    );
+    return tokens.data?.[0]?.token;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Accepts "owner/repo" or any github.com/owner/repo URL form. */
@@ -35,10 +52,10 @@ function parseRepoParam(input: string): { owner: string; repo: string } | null {
   return null;
 }
 
-async function fetchJson(url: string): Promise<unknown | null> {
+async function fetchJson(url: string, token?: string): Promise<unknown | null> {
   try {
     const res = await fetch(url, {
-      headers: githubHeaders(),
+      headers: githubHeaders(token),
       signal: AbortSignal.timeout(8000),
     });
     if (!res.ok) return null;
@@ -52,10 +69,12 @@ async function fetchJson(url: string): Promise<unknown | null> {
 async function fetchFileText(
   owner: string,
   repo: string,
-  filePath: string
+  filePath: string,
+  token?: string
 ): Promise<string | null> {
   const data = (await fetchJson(
-    `${GITHUB_API}/repos/${owner}/${repo}/contents/${filePath}`
+    `${GITHUB_API}/repos/${owner}/${repo}/contents/${filePath}`,
+    token
   )) as { content?: string; encoding?: string } | null;
   if (!data?.content || data.encoding !== "base64") return null;
   try {
@@ -89,28 +108,6 @@ function detectFromRequirements(text: string): DetectedTool[] {
     .flatMap((name) => PYTHON_TOOL_MAP[name] ?? []);
 }
 
-async function attachLogo(tool: DetectedTool): Promise<DetectedTool> {
-  const clientId = process.env.BRANDFETCH_CLIENT_ID;
-  if (!clientId) return tool;
-  try {
-    const res = await fetch(
-      `https://api.brandfetch.io/v2/search/${encodeURIComponent(
-        tool.name
-      )}?c=${clientId}`,
-      { signal: AbortSignal.timeout(4000) }
-    );
-    if (!res.ok) return tool;
-    const brands = (await res.json()) as Array<{
-      domain?: string;
-      icon?: string | null;
-    }>;
-    const match = brands.find((b) => b.domain === tool.domain && b.icon);
-    return match?.icon ? { ...tool, logoUrl: match.icon } : tool;
-  } catch {
-    return tool;
-  }
-}
-
 function detectFromPyproject(text: string): DetectedTool[] {
   // Crude but effective: look for known package names as words
   return Object.entries(PYTHON_TOOL_MAP).flatMap(([pkg, tool]) =>
@@ -136,7 +133,10 @@ export async function GET(request: NextRequest) {
   }
   const { owner, repo } = parsed;
 
-  const repoInfo = (await fetchJson(`${GITHUB_API}/repos/${owner}/${repo}`)) as {
+  // Signed-in users with a GitHub connection can detect their private repos.
+  const token = await getUserGithubToken();
+
+  const repoInfo = (await fetchJson(`${GITHUB_API}/repos/${owner}/${repo}`, token)) as {
     full_name?: string;
     description?: string | null;
     language?: string | null;
@@ -153,7 +153,8 @@ export async function GET(request: NextRequest) {
   }
 
   const rootListing = (await fetchJson(
-    `${GITHUB_API}/repos/${owner}/${repo}/contents/`
+    `${GITHUB_API}/repos/${owner}/${repo}/contents/`,
+    token
   )) as Array<{ name?: string; type?: string }> | null;
   const rootFiles = new Set(
     (rootListing ?? [])
@@ -177,21 +178,21 @@ export async function GET(request: NextRequest) {
   const manifestJobs: Promise<DetectedTool[]>[] = [];
   if (rootFiles.has("package.json")) {
     manifestJobs.push(
-      fetchFileText(owner, repo, "package.json").then((t) =>
+      fetchFileText(owner, repo, "package.json", token).then((t) =>
         t ? detectFromPackageJson(t) : []
       )
     );
   }
   if (rootFiles.has("requirements.txt")) {
     manifestJobs.push(
-      fetchFileText(owner, repo, "requirements.txt").then((t) =>
+      fetchFileText(owner, repo, "requirements.txt", token).then((t) =>
         t ? detectFromRequirements(t) : []
       )
     );
   }
   if (rootFiles.has("pyproject.toml")) {
     manifestJobs.push(
-      fetchFileText(owner, repo, "pyproject.toml").then((t) =>
+      fetchFileText(owner, repo, "pyproject.toml", token).then((t) =>
         t ? detectFromPyproject(t) : []
       )
     );
@@ -209,9 +210,8 @@ export async function GET(request: NextRequest) {
     return true;
   });
 
-  // Attach Brandfetch icons so imported tools render logos on the card.
-  // Only an exact domain match is trusted; anything else keeps no logo.
-  const tools = await Promise.all(deduped.map(attachLogo));
+  // Icons: catalog Simple Icons slug first (free), Brandfetch fallback.
+  const tools = await enrichSuggestions(deduped);
 
   return NextResponse.json({
     repo: {
