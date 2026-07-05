@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import LogoFramework from "@/app/stack/logo-framework";
 import {
   getCardSections,
-  countCardTools,
+  getCardStats,
   DisplaySectionInput,
   DisplaySection,
 } from "@/lib/card/display";
@@ -42,10 +42,13 @@ export default function StackCardPreview({
   const sections = getCardSections(
     stack.sections as unknown as DisplaySectionInput[]
   );
-  const { total, pinned } = countCardTools(
+  const stats = getCardStats(
     stack.sections as unknown as DisplaySectionInput[]
   );
-  const statLabel = `${total} tools · ${pinned} pinned`;
+  const statLabel = stats.label;
+  const overflow = stats.overflow;
+  // Until user profiles ship, the share page is the "see everything" target.
+  const moreHref = `/s/${stackId}`;
   const showWatermark = stack.showWatermark ?? true;
   const isEmpty = sections.length === 0;
 
@@ -119,6 +122,8 @@ export default function StackCardPreview({
           sections={sections}
           showWatermark={showWatermark}
           isEmpty={isEmpty}
+          overflow={overflow}
+          moreHref={moreHref}
         />
       )}
       {theme === "bento" && (
@@ -128,6 +133,8 @@ export default function StackCardPreview({
           sections={sections}
           showWatermark={showWatermark}
           isEmpty={isEmpty}
+          overflow={overflow}
+          moreHref={moreHref}
         />
       )}
       {theme === "terminal" && (
@@ -137,6 +144,8 @@ export default function StackCardPreview({
           sections={sections}
           showWatermark={showWatermark}
           isEmpty={isEmpty}
+          overflow={overflow}
+          moreHref={moreHref}
         />
       )}
 
@@ -162,6 +171,33 @@ interface CardProps {
   sections: DisplaySection[];
   showWatermark: boolean;
   isEmpty: boolean;
+  /** Tools that didn't fit on the card */
+  overflow: number;
+  /** Where "+K more" points (full profile / share page) */
+  moreHref: string;
+}
+
+function MoreChip({
+  overflow,
+  moreHref,
+  className,
+}: {
+  overflow: number;
+  moreHref: string;
+  className?: string;
+}) {
+  if (overflow <= 0) return null;
+  return (
+    <a
+      href={moreHref}
+      className={
+        "inline-flex w-fit items-center rounded-[7px] border border-dashed border-[#D9A16B] px-[9px] py-1 text-[11.5px] font-semibold text-primary hover:bg-[#FDF1E6] " +
+        (className ?? "")
+      }
+    >
+      +{overflow} more
+    </a>
+  );
 }
 
 function EmptyNote() {
@@ -183,6 +219,8 @@ function CardMinimal({
   sections,
   showWatermark,
   isEmpty,
+  overflow,
+  moreHref,
 }: CardProps) {
   return (
     <div className="rounded-[18px] border-[1.5px] border-foreground bg-[#FBF7F0] p-2.5 shadow-[0_4px_0_var(--foreground)]">
@@ -226,6 +264,7 @@ function CardMinimal({
                 </div>
               </div>
             ))}
+            <MoreChip overflow={overflow} moreHref={moreHref} />
           </div>
         )}
         {showWatermark && (
@@ -249,6 +288,8 @@ function CardBento({
   sections,
   showWatermark,
   isEmpty,
+  overflow,
+  moreHref,
 }: CardProps) {
   // Grouped by category: one label per section, tiles below, and the grid
   // grows vertically — no flat 9-cell cap, so no tool is ever dropped.
@@ -295,6 +336,7 @@ function CardBento({
               </div>
             </div>
           ))}
+          <MoreChip overflow={overflow} moreHref={moreHref} />
         </div>
       )}
       {showWatermark && (
@@ -314,6 +356,7 @@ function CardTerminal({
   sections,
   showWatermark,
   isEmpty,
+  overflow,
 }: CardProps) {
   const terminalTitle = `${stackName.toLowerCase().replace(/\s+/g, "-")}.sh`;
   return (
@@ -350,6 +393,9 @@ function CardTerminal({
               </div>
             ))}
             <div className="text-[#5BA35B]">✓ {statLabel}</div>
+            {overflow > 0 && (
+              <div className="text-[#6B5D46]"># +{overflow} more on superstack.app</div>
+            )}
           </>
         )}
         {showWatermark && (
