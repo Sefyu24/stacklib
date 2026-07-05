@@ -6,7 +6,7 @@ import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import {
   getCardSections,
-  countCardTools,
+  getCardStats,
   DisplaySectionInput,
   DisplaySection,
 } from "@/lib/card/display";
@@ -178,8 +178,9 @@ export async function GET(
 
   const displayInput = stack.sections as unknown as DisplaySectionInput[];
   const display: DisplaySection[] = getCardSections(displayInput);
-  const { total, pinned } = countCardTools(displayInput);
-  const statLabel = `${total} tools · ${pinned} pinned`;
+  const stats = getCardStats(displayInput);
+  const statLabel = stats.label;
+  const overflow = stats.overflow;
   const theme = (stack.cardTheme as "minimal" | "bento" | "terminal") ?? "minimal";
   const showWatermark = stack.showWatermark ?? true;
   const isEmpty = display.length === 0;
@@ -210,6 +211,7 @@ export async function GET(
         sections={sections}
         showWatermark={showWatermark}
         isEmpty={isEmpty}
+        overflow={overflow}
       />
     ) : theme === "terminal" ? (
       <TerminalCard
@@ -218,6 +220,7 @@ export async function GET(
         sections={sections}
         showWatermark={showWatermark}
         isEmpty={isEmpty}
+        overflow={overflow}
       />
     ) : (
       <MinimalCard
@@ -226,6 +229,7 @@ export async function GET(
         sections={sections}
         showWatermark={showWatermark}
         isEmpty={isEmpty}
+        overflow={overflow}
       />
     );
 
@@ -263,6 +267,38 @@ interface CardProps {
   sections: RenderSection[];
   showWatermark: boolean;
   isEmpty: boolean;
+  /** Tools that didn't fit on the card */
+  overflow: number;
+}
+
+// Non-interactive "+K more" chip for the PNG (links can't be clicked in an image)
+function MoreChipOg({
+  overflow,
+  color = "#EC5B13",
+  border = "#D9A16B",
+}: {
+  overflow: number;
+  color?: string;
+  border?: string;
+}) {
+  if (overflow <= 0) return null;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignSelf: "flex-start",
+        alignItems: "center",
+        border: `1.5px dashed ${border}`,
+        borderRadius: 10,
+        padding: "6px 13px",
+        fontSize: 18,
+        fontWeight: 600,
+        color,
+      }}
+    >
+      +{overflow} more
+    </div>
+  );
 }
 
 function Wordmark({ color = ORANGE }: { color?: string }) {
@@ -310,6 +346,7 @@ function MinimalCard({
   sections,
   showWatermark,
   isEmpty,
+  overflow,
 }: CardProps) {
   return (
     <Chunky style={{ background: "#FBF7F0", padding: 12, width: "100%", height: "100%" }}>
@@ -413,6 +450,7 @@ function MinimalCard({
                 </div>
               </div>
             ))}
+            <MoreChipOg overflow={overflow} />
           </div>
         )}
         {showWatermark && (
@@ -466,6 +504,7 @@ function BentoCard({
   sections,
   showWatermark,
   isEmpty,
+  overflow,
 }: CardProps) {
   // Grouped by category with one label per section; compact horizontal
   // tiles so every rendered tool fits the fixed 630px frame.
@@ -569,6 +608,7 @@ function BentoCard({
               </div>
             </div>
           ))}
+          <MoreChipOg overflow={overflow} border="#C9A87A" color="#A0713C" />
         </div>
       )}
       {showWatermark && (
@@ -595,6 +635,7 @@ function TerminalCard({
   sections,
   showWatermark,
   isEmpty,
+  overflow,
 }: CardProps) {
   const title = `${stackName.toLowerCase().replace(/\s+/g, "-")}.sh`;
   return (
@@ -670,6 +711,11 @@ function TerminalCard({
               <span style={{ marginRight: 12 }}>&gt;</span>
               {statLabel}
             </div>
+            {overflow > 0 && (
+              <div style={{ display: "flex", color: "#6B5D46" }}>
+                # +{overflow} more on superstack.app
+              </div>
+            )}
           </div>
         )}
         {showWatermark && (
