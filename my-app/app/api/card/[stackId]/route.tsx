@@ -467,9 +467,8 @@ function BentoCard({
   showWatermark,
   isEmpty,
 }: CardProps) {
-  const tiles = sections
-    .flatMap((s) => s.tools.map((t) => ({ ...t, cat: s.name })))
-    .slice(0, 9);
+  // Grouped by category with one label per section; compact horizontal
+  // tiles so every rendered tool fits the fixed 630px frame.
   return (
     <Chunky
       style={{
@@ -519,38 +518,54 @@ function BentoCard({
       {isEmpty ? (
         <EmptyBody />
       ) : (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 12, flexGrow: 1, minHeight: 0, alignContent: "flex-start" }}>
-          {tiles.map((t, i) => (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            flexGrow: 1,
+            minHeight: 0,
+            overflow: "hidden",
+          }}
+        >
+          {sections.map((s) => (
             <div
-              key={i}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
-                width: 344,
-                background: "#FFFDF8",
-                border: "1px solid #E4D5BB",
-                borderRadius: 12,
-                padding: "12px 8px",
-              }}
+              key={s.type}
+              style={{ display: "flex", flexDirection: "column", gap: 6 }}
             >
-              <Logo tool={t} size={40} />
-              <div style={{ display: "flex", fontSize: 18, fontWeight: 700, color: INK }}>
-                {t.name}
-              </div>
               <div
                 style={{
                   display: "flex",
                   fontFamily: "JetBrains Mono",
-                  fontSize: 11,
-                  letterSpacing: 2,
-                  textTransform: "uppercase",
-                  color: "#C9A87A",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: 3,
+                  color: "#A0713C",
                 }}
               >
-                {t.cat}
+                {s.name.toUpperCase()}
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {s.tools.map((t, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 9,
+                      background: "#FFFDF8",
+                      border: "1px solid #E4D5BB",
+                      borderRadius: 10,
+                      padding: "7px 14px 7px 9px",
+                      fontSize: 18,
+                      fontWeight: 700,
+                      color: INK,
+                    }}
+                  >
+                    <Logo tool={t} size={26} />
+                    {t.name}
+                  </div>
+                ))}
               </div>
             </div>
           ))}
