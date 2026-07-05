@@ -30,7 +30,7 @@ export default function StackEditor() {
   const updateToolsMutation = useMutation(api.stacks.updateSectionTools);
   const reorderToolsMutation = useMutation(api.stacks.reorderSectionTools);
   const togglePinnedMutation = useMutation(api.stacks.togglePinnedTool);
-  const renameStackMutation = useMutation(api.stacks.renameStack);
+  const updateStackDetailsMutation = useMutation(api.stacks.updateStackDetails);
   const setCardThemeMutation = useMutation(api.stacks.setCardTheme);
 
   const stack = useQuery(api.stacks.getStack, stackId ? { stackId } : "skip");
@@ -67,6 +67,11 @@ export default function StackEditor() {
   useEffect(() => {
     if (stack?.name) setTitle(stack.name);
   }, [stack?.name]);
+
+  const [subtitle, setSubtitle] = useState("");
+  useEffect(() => {
+    setSubtitle(stack?.subtitle ?? "");
+  }, [stack?.subtitle]);
 
   if (!stackId || stack === undefined) {
     return (
@@ -178,11 +183,20 @@ export default function StackEditor() {
   function commitTitle() {
     const next = title.trim();
     if (next && next !== stack!.name) {
-      renameStackMutation({ stackId: stackId!, name: next }).catch((err) =>
-        console.error("Error renaming stack:", err)
+      updateStackDetailsMutation({ stackId: stackId!, title: next }).catch(
+        (err) => console.error("Error renaming stack:", err)
       );
     } else if (!next) {
       setTitle(stack!.name);
+    }
+  }
+
+  function commitSubtitle() {
+    const next = subtitle.trim();
+    if (next !== (stack!.subtitle ?? "")) {
+      updateStackDetailsMutation({ stackId: stackId!, subtitle: next }).catch(
+        (err) => console.error("Error updating subtitle:", err)
+      );
     }
   }
 
@@ -209,6 +223,18 @@ export default function StackEditor() {
             aria-label="Stack name"
             spellCheck={false}
             className="mb-1.5 w-full border-none bg-transparent p-0 text-[26px] font-black tracking-[-0.02em] text-foreground outline-none sm:text-[34px]"
+          />
+          <input
+            value={subtitle}
+            onChange={(e) => setSubtitle(e.target.value)}
+            onBlur={commitSubtitle}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
+            aria-label="Stack tagline"
+            spellCheck={false}
+            placeholder="Add a one-line tagline (optional)"
+            className="mb-1.5 w-full border-none bg-transparent p-0 text-[15px] font-medium text-[#8A7B63] outline-none placeholder:text-[#B4A78E]"
           />
           <p className="mb-6 flex flex-wrap items-center gap-1 text-[13.5px] leading-relaxed text-[#8A7B63]">
             Search once, we file each tool in the right section. Pin

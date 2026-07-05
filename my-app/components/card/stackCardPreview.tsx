@@ -124,6 +124,7 @@ export default function StackCardPreview({
           isEmpty={isEmpty}
           overflow={overflow}
           moreHref={moreHref}
+          subtitle={stack.subtitle || undefined}
         />
       )}
       {theme === "bento" && (
@@ -135,6 +136,7 @@ export default function StackCardPreview({
           isEmpty={isEmpty}
           overflow={overflow}
           moreHref={moreHref}
+          subtitle={stack.subtitle || undefined}
         />
       )}
       {theme === "terminal" && (
@@ -146,6 +148,7 @@ export default function StackCardPreview({
           isEmpty={isEmpty}
           overflow={overflow}
           moreHref={moreHref}
+          subtitle={stack.subtitle || undefined}
         />
       )}
 
@@ -175,6 +178,8 @@ interface CardProps {
   overflow: number;
   /** Where "+K more" points (full profile / share page) */
   moreHref: string;
+  /** Optional one-line tagline rendered under the title */
+  subtitle?: string;
 }
 
 function MoreChip({
@@ -221,6 +226,7 @@ function CardMinimal({
   isEmpty,
   overflow,
   moreHref,
+  subtitle,
 }: CardProps) {
   return (
     <div className="rounded-[18px] border-[1.5px] border-foreground bg-[#FBF7F0] p-2.5 shadow-[0_4px_0_var(--foreground)]">
@@ -236,6 +242,11 @@ function CardMinimal({
         <div className="my-2 mb-3.5 text-[24px] font-black tracking-[-0.02em]">
           {stackName}
         </div>
+        {subtitle && (
+          <div className="-mt-2 mb-3 text-[12px] font-medium text-[#8A7B63]">
+            {subtitle}
+          </div>
+        )}
         {isEmpty ? (
           <EmptyNote />
         ) : (
@@ -290,6 +301,7 @@ function CardBento({
   isEmpty,
   overflow,
   moreHref,
+  subtitle,
 }: CardProps) {
   // Grouped by category: one label per section, tiles below, and the grid
   // grows vertically — no flat 9-cell cap, so no tool is ever dropped.
@@ -306,6 +318,11 @@ function CardBento({
       <div className="mb-3.5 text-[24px] font-black tracking-[-0.02em]">
         {stackName}
       </div>
+      {subtitle && (
+        <div className="-mt-2 mb-3 text-[12px] font-medium text-[#8A7B63]">
+          {subtitle}
+        </div>
+      )}
       {isEmpty ? (
         <EmptyNote />
       ) : (
@@ -357,6 +374,7 @@ function CardTerminal({
   showWatermark,
   isEmpty,
   overflow,
+  subtitle,
 }: CardProps) {
   const terminalTitle = `${stackName.toLowerCase().replace(/\s+/g, "-")}.sh`;
   return (
@@ -375,6 +393,7 @@ function CardTerminal({
           <span className="text-[#5BA35B]">$</span> superstack show{" "}
           <span className="text-[#8A7B63]">--pinned</span>
         </div>
+        {subtitle && <div className="text-[#6B5D46]"># {subtitle}</div>}
         {isEmpty ? (
           <div className="text-[#6B5D46]">
             # no tools yet — add some to build your stack
