@@ -250,9 +250,8 @@ function CardBento({
   showWatermark,
   isEmpty,
 }: CardProps) {
-  const tiles = sections
-    .flatMap((cs) => cs.tools.map((t) => ({ ...t, cat: cs.name })))
-    .slice(0, 9);
+  // Grouped by category: one label per section, tiles below, and the grid
+  // grows vertically — no flat 9-cell cap, so no tool is ever dropped.
   return (
     <div className="rounded-[18px] border-[1.5px] border-foreground bg-[#F3E8D6] px-[22px] pb-4 pt-[22px] shadow-[0_4px_0_var(--foreground)]">
       <div className="mb-1 flex items-baseline justify-between gap-3">
@@ -269,25 +268,31 @@ function CardBento({
       {isEmpty ? (
         <EmptyNote />
       ) : (
-        <div className="grid grid-cols-3 gap-2">
-          {tiles.map((bt) => (
-            <div
-              key={bt.toolId}
-              className="flex flex-col items-center gap-[7px] rounded-xl border border-[#E4D5BB] bg-card px-2 pb-2.5 pt-[13px]"
-            >
-              <LogoFramework
-                name={bt.name}
-                slug={bt.iconSlug}
-                src={bt.logoUrl}
-                url={bt.url || undefined}
-                size={26}
-              />
-              <span className="text-center text-[10.5px] font-bold text-foreground">
-                {bt.name}
-              </span>
-              <span className="font-mono text-[7.5px] uppercase tracking-[0.14em] text-[#C9A87A]">
-                {bt.cat}
-              </span>
+        <div className="flex flex-col gap-3">
+          {sections.map((cs) => (
+            <div key={cs.sectionType}>
+              <div className="mb-1.5 font-mono text-[8.5px] font-bold uppercase tracking-[0.2em] text-[#A0713C]">
+                {cs.name}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {cs.tools.map((bt) => (
+                  <div
+                    key={bt.toolId}
+                    className="flex min-w-0 items-center gap-2 rounded-xl border border-[#E4D5BB] bg-card px-2.5 py-2"
+                  >
+                    <LogoFramework
+                      name={bt.name}
+                      slug={bt.iconSlug}
+                      src={bt.logoUrl}
+                      url={bt.url || undefined}
+                      size={22}
+                    />
+                    <span className="truncate text-[11px] font-bold text-foreground">
+                      {bt.name}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
