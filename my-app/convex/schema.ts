@@ -31,6 +31,11 @@ export default defineSchema({
     showWatermark: v.optional(v.boolean()),
     // Optional one-line tagline rendered under the title on the card.
     subtitle: v.optional(v.string()),
+    // Optional profile identity rendered on the card.
+    authorName: v.optional(v.string()),
+    authorHandle: v.optional(v.string()),
+    authorAvatarUrl: v.optional(v.string()),
+    showAvatar: v.optional(v.boolean()),
   }).index("by_userId", ["userId"]),
 
   sections: defineTable({
