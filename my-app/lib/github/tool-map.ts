@@ -6,6 +6,8 @@ export interface DetectedTool {
   category: ToolCategory;
   /** Brandfetch icon URL, attached by the detect route when available */
   logoUrl?: string;
+  /** Simple Icons slug (preferred over logoUrl; free, no API call) */
+  iconSlug?: string;
 }
 
 /**
