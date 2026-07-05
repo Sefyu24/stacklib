@@ -19,6 +19,10 @@ export const getStack = query({
     projectURL: v.optional(v.string()),
     cardTheme: v.optional(v.string()),
     showWatermark: v.optional(v.boolean()),
+    authorName: v.optional(v.string()),
+    authorHandle: v.optional(v.string()),
+    authorAvatarUrl: v.optional(v.string()),
+    showAvatar: v.optional(v.boolean()),
     sections: v.array(v.object({
       _id: v.id("sections"),
       _creationTime: v.number(),
@@ -298,6 +302,39 @@ export const setCardTheme = mutation({
     const patch: { cardTheme?: string; showWatermark?: boolean } = {};
     if (args.cardTheme !== undefined) patch.cardTheme = args.cardTheme;
     if (args.showWatermark !== undefined) patch.showWatermark = args.showWatermark;
+    if (Object.keys(patch).length > 0) {
+      await ctx.db.patch(args.stackId, patch);
+    }
+    return null;
+  },
+});
+
+/**
+ * Update the optional profile identity shown on the card.
+ * Patches only the fields that were provided.
+ */
+export const updateStackIdentity = mutation({
+  args: {
+    stackId: v.id("stacks"),
+    authorName: v.optional(v.string()),
+    authorHandle: v.optional(v.string()),
+    authorAvatarUrl: v.optional(v.string()),
+    showAvatar: v.optional(v.boolean()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const patch: {
+      authorName?: string;
+      authorHandle?: string;
+      authorAvatarUrl?: string;
+      showAvatar?: boolean;
+    } = {};
+    if (args.authorName !== undefined) patch.authorName = args.authorName.trim();
+    if (args.authorHandle !== undefined)
+      patch.authorHandle = args.authorHandle.trim().replace(/^@/, "");
+    if (args.authorAvatarUrl !== undefined)
+      patch.authorAvatarUrl = args.authorAvatarUrl.trim();
+    if (args.showAvatar !== undefined) patch.showAvatar = args.showAvatar;
     if (Object.keys(patch).length > 0) {
       await ctx.db.patch(args.stackId, patch);
     }

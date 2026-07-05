@@ -29,6 +29,11 @@ export default defineSchema({
     // Pre-configured card style: "minimal" | "bento" | "terminal".
     cardTheme: v.optional(v.string()),
     showWatermark: v.optional(v.boolean()),
+    // Optional profile identity rendered on the card.
+    authorName: v.optional(v.string()),
+    authorHandle: v.optional(v.string()),
+    authorAvatarUrl: v.optional(v.string()),
+    showAvatar: v.optional(v.boolean()),
   }).index("by_userId", ["userId"]),
 
   sections: defineTable({

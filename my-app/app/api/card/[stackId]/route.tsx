@@ -185,6 +185,12 @@ export async function GET(
   const showWatermark = stack.showWatermark ?? true;
   const isEmpty = display.length === 0;
 
+  // Satori can't reliably fetch remote avatars, so resolve to a data URI here.
+  const avatarSrc =
+    stack.authorAvatarUrl && stack.showAvatar !== false
+      ? await fetchLogoAsDataUri(stack.authorAvatarUrl)
+      : null;
+
   // Resolve logos server-side (Simple Icons SVG or Brandfetch png).
   const sections: RenderSection[] = await Promise.all(
     display.map(async (section) => {
@@ -212,6 +218,10 @@ export async function GET(
         showWatermark={showWatermark}
         isEmpty={isEmpty}
         overflow={overflow}
+        authorName={stack.authorName}
+        authorHandle={stack.authorHandle}
+        avatarSrc={avatarSrc}
+        showAvatar={stack.showAvatar ?? true}
       />
     ) : theme === "terminal" ? (
       <TerminalCard
@@ -221,6 +231,10 @@ export async function GET(
         showWatermark={showWatermark}
         isEmpty={isEmpty}
         overflow={overflow}
+        authorName={stack.authorName}
+        authorHandle={stack.authorHandle}
+        avatarSrc={avatarSrc}
+        showAvatar={stack.showAvatar ?? true}
       />
     ) : (
       <MinimalCard
@@ -230,6 +244,10 @@ export async function GET(
         showWatermark={showWatermark}
         isEmpty={isEmpty}
         overflow={overflow}
+        authorName={stack.authorName}
+        authorHandle={stack.authorHandle}
+        avatarSrc={avatarSrc}
+        showAvatar={stack.showAvatar ?? true}
       />
     );
 
@@ -269,6 +287,66 @@ interface CardProps {
   isEmpty: boolean;
   /** Tools that didn't fit on the card */
   overflow: number;
+  authorName?: string;
+  authorHandle?: string;
+  /** Resolved avatar image source (data URI) */
+  avatarSrc?: string | null;
+  showAvatar?: boolean;
+}
+
+// Small identity row under the header: avatar + display name + @handle.
+function IdentityRowOg({
+  authorName,
+  authorHandle,
+  avatarSrc,
+  showAvatar,
+  handleColor,
+}: {
+  authorName?: string;
+  authorHandle?: string;
+  avatarSrc?: string | null;
+  showAvatar?: boolean;
+  handleColor: string;
+}) {
+  if (!authorName && !authorHandle) return null;
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        marginTop: 10,
+      }}
+    >
+      {showAvatar !== false && avatarSrc && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={avatarSrc}
+          alt=""
+          width={30}
+          height={30}
+          style={{ borderRadius: 999, objectFit: "cover" }}
+        />
+      )}
+      {authorName && (
+        <div style={{ display: "flex", fontSize: 20, fontWeight: 600, color: INK }}>
+          {authorName}
+        </div>
+      )}
+      {authorHandle && (
+        <div
+          style={{
+            display: "flex",
+            fontFamily: "JetBrains Mono",
+            fontSize: 17,
+            color: handleColor,
+          }}
+        >
+          @{authorHandle}
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Non-interactive "+K more" chip for the PNG (links can't be clicked in an image)
@@ -347,6 +425,10 @@ function MinimalCard({
   showWatermark,
   isEmpty,
   overflow,
+  authorName,
+  authorHandle,
+  avatarSrc,
+  showAvatar,
 }: CardProps) {
   return (
     <Chunky style={{ background: "#FBF7F0", padding: 12, width: "100%", height: "100%" }}>
@@ -385,6 +467,13 @@ function MinimalCard({
             </div>
           )}
         </div>
+        <IdentityRowOg
+          authorName={authorName}
+          authorHandle={authorHandle}
+          avatarSrc={avatarSrc}
+          showAvatar={showAvatar}
+          handleColor={TAUPE}
+        />
         <div
           style={{
             display: "flex",
@@ -505,6 +594,10 @@ function BentoCard({
   showWatermark,
   isEmpty,
   overflow,
+  authorName,
+  authorHandle,
+  avatarSrc,
+  showAvatar,
 }: CardProps) {
   // Grouped by category with one label per section; compact horizontal
   // tiles so every rendered tool fits the fixed 630px frame.
@@ -540,6 +633,13 @@ function BentoCard({
           </div>
         )}
       </div>
+      <IdentityRowOg
+        authorName={authorName}
+        authorHandle={authorHandle}
+        avatarSrc={avatarSrc}
+        showAvatar={showAvatar}
+        handleColor="#A0713C"
+      />
       <div
         style={{
           display: "flex",
@@ -636,6 +736,8 @@ function TerminalCard({
   showWatermark,
   isEmpty,
   overflow,
+  authorName,
+  authorHandle,
 }: CardProps) {
   const title = `${stackName.toLowerCase().replace(/\s+/g, "-")}.sh`;
   return (
@@ -689,6 +791,11 @@ function TerminalCard({
           <span style={{ marginLeft: 12 }}>superstack show</span>
           <span style={{ color: "#8A7B63", marginLeft: 12 }}>--pinned</span>
         </div>
+        {(authorHandle || authorName) && (
+          <div style={{ display: "flex", color: "#6B5D46" }}>
+            # by {authorHandle ? `@${authorHandle}` : authorName}
+          </div>
+        )}
         {isEmpty ? (
           <div style={{ display: "flex", color: "#6B5D46" }}>
             # no tools yet — add some to build your stack

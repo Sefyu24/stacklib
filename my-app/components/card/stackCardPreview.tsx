@@ -124,6 +124,10 @@ export default function StackCardPreview({
           isEmpty={isEmpty}
           overflow={overflow}
           moreHref={moreHref}
+          authorName={stack.authorName}
+          authorHandle={stack.authorHandle}
+          avatarSrc={stack.authorAvatarUrl || null}
+          showAvatar={stack.showAvatar ?? true}
         />
       )}
       {theme === "bento" && (
@@ -135,6 +139,10 @@ export default function StackCardPreview({
           isEmpty={isEmpty}
           overflow={overflow}
           moreHref={moreHref}
+          authorName={stack.authorName}
+          authorHandle={stack.authorHandle}
+          avatarSrc={stack.authorAvatarUrl || null}
+          showAvatar={stack.showAvatar ?? true}
         />
       )}
       {theme === "terminal" && (
@@ -146,6 +154,10 @@ export default function StackCardPreview({
           isEmpty={isEmpty}
           overflow={overflow}
           moreHref={moreHref}
+          authorName={stack.authorName}
+          authorHandle={stack.authorHandle}
+          avatarSrc={stack.authorAvatarUrl || null}
+          showAvatar={stack.showAvatar ?? true}
         />
       )}
 
@@ -175,6 +187,49 @@ interface CardProps {
   overflow: number;
   /** Where "+K more" points (full profile / share page) */
   moreHref: string;
+  authorName?: string;
+  authorHandle?: string;
+  /** Resolved avatar image source */
+  avatarSrc?: string | null;
+  showAvatar?: boolean;
+}
+
+function IdentityRow({
+  authorName,
+  authorHandle,
+  avatarSrc,
+  showAvatar,
+  handleClassName,
+}: {
+  authorName?: string;
+  authorHandle?: string;
+  avatarSrc?: string | null;
+  showAvatar?: boolean;
+  handleClassName: string;
+}) {
+  if (!authorName && !authorHandle) return null;
+  return (
+    <div className="mt-2 flex items-center gap-2">
+      {showAvatar !== false && avatarSrc && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={avatarSrc}
+          alt=""
+          className="size-[18px] rounded-full object-cover"
+        />
+      )}
+      {authorName && (
+        <span className="text-[12px] font-semibold text-foreground">
+          {authorName}
+        </span>
+      )}
+      {authorHandle && (
+        <span className={`font-mono text-[10.5px] ${handleClassName}`}>
+          @{authorHandle}
+        </span>
+      )}
+    </div>
+  );
 }
 
 function MoreChip({
@@ -221,6 +276,10 @@ function CardMinimal({
   isEmpty,
   overflow,
   moreHref,
+  authorName,
+  authorHandle,
+  avatarSrc,
+  showAvatar,
 }: CardProps) {
   return (
     <div className="rounded-[18px] border-[1.5px] border-foreground bg-[#FBF7F0] p-2.5 shadow-[0_4px_0_var(--foreground)]">
@@ -233,6 +292,13 @@ function CardMinimal({
             {statLabel}
           </span>
         </div>
+        <IdentityRow
+          authorName={authorName}
+          authorHandle={authorHandle}
+          avatarSrc={avatarSrc}
+          showAvatar={showAvatar}
+          handleClassName="text-[#B4A78E]"
+        />
         <div className="my-2 mb-3.5 text-[24px] font-black tracking-[-0.02em]">
           {stackName}
         </div>
@@ -290,6 +356,10 @@ function CardBento({
   isEmpty,
   overflow,
   moreHref,
+  authorName,
+  authorHandle,
+  avatarSrc,
+  showAvatar,
 }: CardProps) {
   // Grouped by category: one label per section, tiles below, and the grid
   // grows vertically — no flat 9-cell cap, so no tool is ever dropped.
@@ -303,6 +373,13 @@ function CardBento({
           {statLabel}
         </span>
       </div>
+      <IdentityRow
+        authorName={authorName}
+        authorHandle={authorHandle}
+        avatarSrc={avatarSrc}
+        showAvatar={showAvatar}
+        handleClassName="text-[#A0713C]"
+      />
       <div className="mb-3.5 text-[24px] font-black tracking-[-0.02em]">
         {stackName}
       </div>
@@ -357,6 +434,8 @@ function CardTerminal({
   showWatermark,
   isEmpty,
   overflow,
+  authorName,
+  authorHandle,
 }: CardProps) {
   const terminalTitle = `${stackName.toLowerCase().replace(/\s+/g, "-")}.sh`;
   return (
@@ -375,6 +454,11 @@ function CardTerminal({
           <span className="text-[#5BA35B]">$</span> superstack show{" "}
           <span className="text-[#8A7B63]">--pinned</span>
         </div>
+        {(authorHandle || authorName) && (
+          <div className="text-[#6B5D46]">
+            # by {authorHandle ? `@${authorHandle}` : authorName}
+          </div>
+        )}
         {isEmpty ? (
           <div className="text-[#6B5D46]">
             # no tools yet — add some to build your stack

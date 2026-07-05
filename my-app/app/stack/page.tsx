@@ -12,6 +12,8 @@ import {
   CatalogCategory,
 } from "@/lib/catalog";
 import UniversalSearch from "@/components/builder/universalSearch";
+import { Input } from "@/components/ui/input";
+import { Toggle } from "@/components/ui/toggle";
 import SectionBlock from "@/components/builder/sectionBlock";
 import StackCardPreview from "@/components/card/stackCardPreview";
 import GithubImportDialog from "@/components/github/importDialog";
@@ -32,6 +34,7 @@ export default function StackEditor() {
   const togglePinnedMutation = useMutation(api.stacks.togglePinnedTool);
   const renameStackMutation = useMutation(api.stacks.renameStack);
   const setCardThemeMutation = useMutation(api.stacks.setCardTheme);
+  const updateStackIdentityMutation = useMutation(api.stacks.updateStackIdentity);
 
   const stack = useQuery(api.stacks.getStack, stackId ? { stackId } : "skip");
 
@@ -67,6 +70,19 @@ export default function StackEditor() {
   useEffect(() => {
     if (stack?.name) setTitle(stack.name);
   }, [stack?.name]);
+
+  const [authorName, setAuthorName] = useState("");
+  const [authorHandle, setAuthorHandle] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  useEffect(() => {
+    setAuthorName(stack?.authorName ?? "");
+  }, [stack?.authorName]);
+  useEffect(() => {
+    setAuthorHandle(stack?.authorHandle ?? "");
+  }, [stack?.authorHandle]);
+  useEffect(() => {
+    setAvatarUrl(stack?.authorAvatarUrl ?? "");
+  }, [stack?.authorAvatarUrl]);
 
   if (!stackId || stack === undefined) {
     return (
@@ -186,6 +202,18 @@ export default function StackEditor() {
     }
   }
 
+  function commitIdentity(
+    field: "authorName" | "authorHandle" | "authorAvatarUrl",
+    value: string
+  ) {
+    if ((stack![field] ?? "") === value.trim()) return;
+    updateStackIdentityMutation({ stackId: stackId!, [field]: value }).catch(
+      (err) => console.error("Error updating card identity:", err)
+    );
+  }
+
+  const showAvatar = stack.showAvatar ?? true;
+
   const selectedNames = stack.sections.flatMap((s) =>
     s.selectedTools.map((st) => st.tool.name)
   );
@@ -219,6 +247,62 @@ export default function StackEditor() {
             />
             to feature a tool on your card, drag to reorder.
           </p>
+
+          <div className="rounded-[10px] border border-border p-3 mb-6">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A7B63]">
+                Card identity
+              </span>
+              <Toggle
+                size="sm"
+                pressed={showAvatar}
+                onPressedChange={() =>
+                  updateStackIdentityMutation({
+                    stackId: stackId!,
+                    showAvatar: !showAvatar,
+                  }).catch((err) =>
+                    console.error("Error toggling avatar:", err)
+                  )
+                }
+                aria-label="Show avatar"
+                className="h-7 px-2 font-mono text-[11px] font-semibold text-[#8A7B63] data-[state=on]:text-foreground"
+              >
+                Show avatar
+              </Toggle>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-3">
+              <Input
+                value={authorName}
+                onChange={(e) => setAuthorName(e.target.value)}
+                onBlur={() => commitIdentity("authorName", authorName)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.currentTarget.blur();
+                }}
+                placeholder="Display name"
+                aria-label="Display name"
+              />
+              <Input
+                value={authorHandle}
+                onChange={(e) => setAuthorHandle(e.target.value)}
+                onBlur={() => commitIdentity("authorHandle", authorHandle)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.currentTarget.blur();
+                }}
+                placeholder="@handle"
+                aria-label="Handle"
+              />
+              <Input
+                value={avatarUrl}
+                onChange={(e) => setAvatarUrl(e.target.value)}
+                onBlur={() => commitIdentity("authorAvatarUrl", avatarUrl)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") e.currentTarget.blur();
+                }}
+                placeholder="Avatar URL"
+                aria-label="Avatar URL"
+              />
+            </div>
+          </div>
 
           <UniversalSearch
             selectedNames={selectedNames}
