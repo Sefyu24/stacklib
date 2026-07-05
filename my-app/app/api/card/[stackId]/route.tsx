@@ -212,6 +212,7 @@ export async function GET(
         showWatermark={showWatermark}
         isEmpty={isEmpty}
         overflow={overflow}
+        subtitle={stack.subtitle || undefined}
       />
     ) : theme === "terminal" ? (
       <TerminalCard
@@ -221,6 +222,7 @@ export async function GET(
         showWatermark={showWatermark}
         isEmpty={isEmpty}
         overflow={overflow}
+        subtitle={stack.subtitle || undefined}
       />
     ) : (
       <MinimalCard
@@ -230,6 +232,7 @@ export async function GET(
         showWatermark={showWatermark}
         isEmpty={isEmpty}
         overflow={overflow}
+        subtitle={stack.subtitle || undefined}
       />
     );
 
@@ -269,6 +272,8 @@ interface CardProps {
   isEmpty: boolean;
   /** Tools that didn't fit on the card */
   overflow: number;
+  /** Optional one-line tagline rendered under the title */
+  subtitle?: string;
 }
 
 // Non-interactive "+K more" chip for the PNG (links can't be clicked in an image)
@@ -347,6 +352,7 @@ function MinimalCard({
   showWatermark,
   isEmpty,
   overflow,
+  subtitle,
 }: CardProps) {
   return (
     <Chunky style={{ background: "#FBF7F0", padding: 12, width: "100%", height: "100%" }}>
@@ -399,6 +405,20 @@ function MinimalCard({
         >
           {truncate(stackName, 34)}
         </div>
+        {subtitle && (
+          <div
+            style={{
+              display: "flex",
+              flexShrink: 0,
+              fontSize: 20,
+              color: "#8A7B63",
+              marginTop: -6,
+              marginBottom: 14,
+            }}
+          >
+            {subtitle}
+          </div>
+        )}
         {isEmpty ? (
           <EmptyBody />
         ) : (
@@ -505,6 +525,7 @@ function BentoCard({
   showWatermark,
   isEmpty,
   overflow,
+  subtitle,
 }: CardProps) {
   // Grouped by category with one label per section; compact horizontal
   // tiles so every rendered tool fits the fixed 630px frame.
@@ -554,6 +575,20 @@ function BentoCard({
       >
         {truncate(stackName, 34)}
       </div>
+      {subtitle && (
+        <div
+          style={{
+            display: "flex",
+            flexShrink: 0,
+            fontSize: 20,
+            color: "#8A7B63",
+            marginTop: -6,
+            marginBottom: 14,
+          }}
+        >
+          {subtitle}
+        </div>
+      )}
       {isEmpty ? (
         <EmptyBody />
       ) : (
@@ -636,6 +671,7 @@ function TerminalCard({
   showWatermark,
   isEmpty,
   overflow,
+  subtitle,
 }: CardProps) {
   const title = `${stackName.toLowerCase().replace(/\s+/g, "-")}.sh`;
   return (
@@ -689,6 +725,9 @@ function TerminalCard({
           <span style={{ marginLeft: 12 }}>superstack show</span>
           <span style={{ color: "#8A7B63", marginLeft: 12 }}>--pinned</span>
         </div>
+        {subtitle && (
+          <div style={{ display: "flex", color: "#6B5D46" }}># {subtitle}</div>
+        )}
         {isEmpty ? (
           <div style={{ display: "flex", color: "#6B5D46" }}>
             # no tools yet — add some to build your stack

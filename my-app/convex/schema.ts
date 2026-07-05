@@ -29,6 +29,8 @@ export default defineSchema({
     // Pre-configured card style: "minimal" | "bento" | "terminal".
     cardTheme: v.optional(v.string()),
     showWatermark: v.optional(v.boolean()),
+    // Optional one-line tagline rendered under the title on the card.
+    subtitle: v.optional(v.string()),
   }).index("by_userId", ["userId"]),
 
   sections: defineTable({

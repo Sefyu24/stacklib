@@ -18,6 +18,7 @@ export const getStack = query({
     userId: v.optional(v.string()),
     projectURL: v.optional(v.string()),
     cardTheme: v.optional(v.string()),
+    subtitle: v.optional(v.string()),
     showWatermark: v.optional(v.boolean()),
     sections: v.array(v.object({
       _id: v.id("sections"),
@@ -306,16 +307,27 @@ export const setCardTheme = mutation({
 });
 
 /**
- * Rename a stack
+ * Update the stack's title and/or subtitle. An empty subtitle is stored
+ * as "" and treated as cleared by the renderers.
  */
-export const renameStack = mutation({
+export const updateStackDetails = mutation({
   args: {
     stackId: v.id("stacks"),
-    name: v.string(),
+    title: v.optional(v.string()),
+    subtitle: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    await ctx.db.patch(args.stackId, { name: args.name.trim() || "My Tech Stack" });
+    const patch: { name?: string; subtitle?: string } = {};
+    if (args.title !== undefined) {
+      patch.name = args.title.trim() || "My Tech Stack";
+    }
+    if (args.subtitle !== undefined) {
+      patch.subtitle = args.subtitle.trim();
+    }
+    if (Object.keys(patch).length > 0) {
+      await ctx.db.patch(args.stackId, patch);
+    }
     return null;
   },
 });
