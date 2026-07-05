@@ -17,6 +17,8 @@ export const getStack = query({
     name: v.string(),
     userId: v.optional(v.string()),
     projectURL: v.optional(v.string()),
+    cardTheme: v.optional(v.string()),
+    showWatermark: v.optional(v.boolean()),
     sections: v.array(v.object({
       _id: v.id("sections"),
       _creationTime: v.number(),
@@ -28,6 +30,7 @@ export const getStack = query({
         _id: v.id("selectedTools"),
         _creationTime: v.number(),
         toolId: v.id("tools"),
+        order: v.optional(v.number()),
         tool: v.object({
           _id: v.id("tools"),
           _creationTime: v.number(),
@@ -36,6 +39,8 @@ export const getStack = query({
           category: v.string(),
           toolUrl: v.optional(v.string()),
           toolDescription: v.optional(v.string()),
+          logoUrl: v.optional(v.string()),
+          iconSlug: v.optional(v.string()),
         }),
       })),
       pinnedTools: v.array(v.object({
@@ -50,6 +55,8 @@ export const getStack = query({
           category: v.string(),
           toolUrl: v.optional(v.string()),
           toolDescription: v.optional(v.string()),
+          logoUrl: v.optional(v.string()),
+          iconSlug: v.optional(v.string()),
         }),
       })),
     })),
@@ -79,6 +86,13 @@ export const getStack = query({
           .withIndex("by_sectionId", (q) => q.eq("sectionId", section._id))
           .collect();
 
+        // Order by the `order` field (falling back to creation time for
+        // legacy rows that predate ordering).
+        selectedToolsRaw.sort(
+          (a, b) =>
+            (a.order ?? a._creationTime) - (b.order ?? b._creationTime)
+        );
+
         const selectedTools = await Promise.all(
           selectedToolsRaw.map(async (st) => {
             const tool = await ctx.db.get(st.toolId);
@@ -87,6 +101,7 @@ export const getStack = query({
               _id: st._id,
               _creationTime: st._creationTime,
               toolId: st.toolId,
+              order: st.order,
               tool,
             };
           })
@@ -148,6 +163,8 @@ export const getToolsByCategory = query({
     category: v.string(),
     toolUrl: v.optional(v.string()),
     toolDescription: v.optional(v.string()),
+    logoUrl: v.optional(v.string()),
+    iconSlug: v.optional(v.string()),
   })),
   handler: async (ctx, args) => {
     return await ctx.db
@@ -195,6 +212,113 @@ export const createStack = mutation({
   },
 });
 
+
+/**
+ * Get the owner's stack, creating it (with default sections) on first visit.
+ * ownerId is a Clerk user id when signed in, or a local guest key otherwise.
+ */
+export const getOrCreateStack = mutation({
+  args: {
+    ownerId: v.string(),
+    name: v.optional(v.string()),
+  },
+  returns: v.id("stacks"),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("stacks")
+      .withIndex("by_userId", (q) => q.eq("userId", args.ownerId))
+      .first();
+    if (existing) return existing._id;
+
+    const stackId = await ctx.db.insert("stacks", {
+      name: args.name ?? "My Tech Stack",
+      userId: args.ownerId,
+    });
+
+    const sectionTypes = ["frontend", "backend", "ide", "ai", "other"] as const;
+    const sectionNames = ["Frontend", "Backend", "IDE", "AI", "Other"];
+    for (let i = 0; i < sectionTypes.length; i++) {
+      await ctx.db.insert("sections", {
+        stackId,
+        sectionType: sectionTypes[i],
+        name: sectionNames[i],
+        order: i,
+      });
+    }
+
+    return stackId;
+  },
+});
+
+/**
+ * When a guest signs in, move their guest stack onto their account —
+ * but only if the account doesn't already have one.
+ */
+export const adoptGuestStack = mutation({
+  args: {
+    guestId: v.string(),
+    userId: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userStack = await ctx.db
+      .query("stacks")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .first();
+    if (userStack) return null;
+
+    const guestStack = await ctx.db
+      .query("stacks")
+      .withIndex("by_userId", (q) => q.eq("userId", args.guestId))
+      .first();
+    if (guestStack) {
+      await ctx.db.patch(guestStack._id, { userId: args.userId });
+    }
+    return null;
+  },
+});
+
+/**
+ * Set the card style/theme and watermark visibility for a stack.
+ */
+export const setCardTheme = mutation({
+  args: {
+    stackId: v.id("stacks"),
+    cardTheme: v.optional(
+      v.union(
+        v.literal("minimal"),
+        v.literal("bento"),
+        v.literal("terminal")
+      )
+    ),
+    showWatermark: v.optional(v.boolean()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const patch: { cardTheme?: string; showWatermark?: boolean } = {};
+    if (args.cardTheme !== undefined) patch.cardTheme = args.cardTheme;
+    if (args.showWatermark !== undefined) patch.showWatermark = args.showWatermark;
+    if (Object.keys(patch).length > 0) {
+      await ctx.db.patch(args.stackId, patch);
+    }
+    return null;
+  },
+});
+
+/**
+ * Rename a stack
+ */
+export const renameStack = mutation({
+  args: {
+    stackId: v.id("stacks"),
+    name: v.string(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.stackId, { name: args.name.trim() || "My Tech Stack" });
+    return null;
+  },
+});
 
 /**
  * Add a tool to a section
@@ -259,9 +383,14 @@ export const togglePinnedTool = mutation({
   },
 });
 
+// How many tools per section are pinned automatically as they're added.
+const AUTO_PIN_COUNT = 5;
+
 /**
- * Update selected tools for a section
- * This replaces the entire set of tools for a given section
+ * Update selected tools for a section. Replaces the entire set, preserving
+ * the incoming array order via the `order` field. Newly added tools are
+ * auto-pinned (up to AUTO_PIN_COUNT total per section) so the card looks
+ * populated by default, and pins for removed tools are cleaned up.
  */
 export const updateSectionTools = mutation({
   args: {
@@ -270,23 +399,80 @@ export const updateSectionTools = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
-    // Get existing selected tools for this section
     const existingTools = await ctx.db
       .query("selectedTools")
       .withIndex("by_sectionId", (q) => q.eq("sectionId", args.sectionId))
       .collect();
+    const oldToolIds = new Set(existingTools.map((t) => t.toolId));
 
-    // Delete existing tools
+    // Replace the selected set, storing array position as `order`.
     for (const tool of existingTools) {
       await ctx.db.delete(tool._id);
     }
-
-    // Insert new tools
-    for (const toolId of args.toolIds) {
+    for (let i = 0; i < args.toolIds.length; i++) {
       await ctx.db.insert("selectedTools", {
+        sectionId: args.sectionId,
+        toolId: args.toolIds[i],
+        order: i,
+      });
+    }
+
+    // Reconcile pins: drop pins for tools no longer selected.
+    const newToolIds = new Set(args.toolIds);
+    const pins = await ctx.db
+      .query("pinnedTools")
+      .withIndex("by_sectionId", (q) => q.eq("sectionId", args.sectionId))
+      .collect();
+    const pinnedSet = new Set<string>();
+    for (const pin of pins) {
+      if (!newToolIds.has(pin.toolId)) {
+        await ctx.db.delete(pin._id);
+      } else {
+        pinnedSet.add(pin.toolId);
+      }
+    }
+
+    // Auto-pin newly added tools (in order) until the section reaches
+    // AUTO_PIN_COUNT pins. Tools already present keep their pin state, so
+    // explicit unpins are respected.
+    let pinnedCount = pinnedSet.size;
+    for (const toolId of args.toolIds) {
+      if (pinnedCount >= AUTO_PIN_COUNT) break;
+      if (oldToolIds.has(toolId) || pinnedSet.has(toolId)) continue;
+      await ctx.db.insert("pinnedTools", {
         sectionId: args.sectionId,
         toolId,
       });
+      pinnedSet.add(toolId);
+      pinnedCount++;
+    }
+
+    return null;
+  },
+});
+
+/**
+ * Reorder the tools within a section. `orderedToolIds` is the full set of
+ * the section's tool ids in their new order.
+ */
+export const reorderSectionTools = mutation({
+  args: {
+    sectionId: v.id("sections"),
+    orderedToolIds: v.array(v.id("tools")),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const existing = await ctx.db
+      .query("selectedTools")
+      .withIndex("by_sectionId", (q) => q.eq("sectionId", args.sectionId))
+      .collect();
+    const byToolId = new Map(existing.map((st) => [st.toolId, st]));
+
+    for (let i = 0; i < args.orderedToolIds.length; i++) {
+      const st = byToolId.get(args.orderedToolIds[i]);
+      if (st && st.order !== i) {
+        await ctx.db.patch(st._id, { order: i });
+      }
     }
 
     return null;
