@@ -403,33 +403,42 @@ function CardBento({
       {isEmpty ? (
         <EmptyNote />
       ) : (
-        <div className="flex flex-col gap-3">
-          {sections.map((cs) => (
-            <div key={cs.sectionType}>
-              <div className="mb-1.5 font-mono text-[8.5px] font-bold uppercase tracking-[0.2em] text-[#A0713C]">
-                {cs.name}
-              </div>
-              <div className="grid grid-cols-3 gap-2">
+        <div className="flex flex-col gap-2">
+          {/* One column per section, kanban-style, matching the OG render */}
+          <div
+            className="grid items-stretch gap-1.5"
+            style={{
+              gridTemplateColumns: `repeat(${Math.max(sections.length, 1)}, minmax(0, 1fr))`,
+            }}
+          >
+            {sections.map((cs) => (
+              <div
+                key={cs.sectionType}
+                className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-[#E4D5BB] bg-[#FFFDF8]/45 p-1.5"
+              >
+                <div className="truncate text-center font-mono text-[7px] font-bold uppercase tracking-[0.14em] text-[#A0713C]">
+                  {cs.name}
+                </div>
                 {cs.tools.map((bt) => (
                   <div
                     key={bt.toolId}
-                    className="flex min-w-0 items-center gap-2 rounded-xl border border-[#E4D5BB] bg-card px-2.5 py-2"
+                    className="flex min-w-0 items-center gap-1 rounded-md border border-[#E4D5BB] bg-card px-1.5 py-1"
                   >
                     <LogoFramework
                       name={bt.name}
                       slug={bt.iconSlug}
                       src={bt.logoUrl}
                       url={bt.url || undefined}
-                      size={22}
+                      size={13}
                     />
-                    <span className="truncate text-[11px] font-bold text-foreground">
+                    <span className="truncate text-[8.5px] font-bold text-foreground">
                       {bt.name}
                     </span>
                   </div>
                 ))}
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
           <MoreChip overflow={overflow} moreHref={moreHref} />
         </div>
       )}

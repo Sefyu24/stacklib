@@ -695,52 +695,61 @@ function BentoCard({
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
             gap: 12,
             flexGrow: 1,
             minHeight: 0,
             overflow: "hidden",
+            alignItems: "stretch",
           }}
         >
           {sections.map((s) => (
             <div
               key={s.type}
-              style={{ display: "flex", flexDirection: "column", gap: 6 }}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                flex: 1,
+                minWidth: 0,
+                background: "rgba(255,253,248,0.45)",
+                border: "1px solid #E4D5BB",
+                borderRadius: 14,
+                padding: "12px 10px",
+              }}
             >
               <div
                 style={{
                   display: "flex",
+                  justifyContent: "center",
                   fontFamily: "JetBrains Mono",
-                  fontSize: 12,
+                  fontSize: 11.5,
                   fontWeight: 700,
-                  letterSpacing: 3,
+                  letterSpacing: 2.5,
                   color: "#A0713C",
                 }}
               >
                 {s.name.toUpperCase()}
               </div>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {s.tools.map((t, i) => (
-                  <div
-                    key={i}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 9,
-                      background: "#FFFDF8",
-                      border: "1px solid #E4D5BB",
-                      borderRadius: 10,
-                      padding: "7px 14px 7px 9px",
-                      fontSize: 18,
-                      fontWeight: 700,
-                      color: INK,
-                    }}
-                  >
-                    <Logo tool={t} size={26} />
-                    {t.name}
-                  </div>
-                ))}
-              </div>
+              {s.tools.map((t, i) => (
+                <div
+                  key={i}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: "#FFFDF8",
+                    border: "1px solid #E4D5BB",
+                    borderRadius: 10,
+                    padding: "8px 10px",
+                    fontSize: 15.5,
+                    fontWeight: 700,
+                    color: INK,
+                  }}
+                >
+                  <Logo tool={t} size={24} />
+                  {truncate(t.name, 13)}
+                </div>
+              ))}
             </div>
           ))}
           <MoreChipOg overflow={overflow} border="#C9A87A" color="#A0713C" />
