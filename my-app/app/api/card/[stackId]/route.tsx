@@ -11,6 +11,7 @@ import {
   DisplaySection,
 } from "@/lib/card/display";
 import { toolLogoUrl } from "@/lib/logo";
+import { Logomark } from "@/components/brand/logo";
 
 export const runtime = "nodejs";
 
@@ -584,22 +585,7 @@ function MinimalCard({
             >
               superstack.app
             </div>
-            <div
-              style={{
-                display: "flex",
-                width: 30,
-                height: 30,
-                borderRadius: 8,
-                background: ORANGE,
-                color: "#FFF7EE",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: 900,
-                fontSize: 17,
-              }}
-            >
-              S
-            </div>
+            <Logomark size={30} />
           </div>
         )}
       </div>

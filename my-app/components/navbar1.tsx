@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import { Button } from "./ui/button";
+import { Logomark } from "./brand/logo";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -13,9 +14,7 @@ export default function Navbar() {
     <header className="sticky top-0 z-40 border-b border-border bg-background">
       <div className="mx-auto flex max-w-[1240px] items-center justify-between gap-2 px-4 py-4 sm:px-9">
         <Link href="/" className="flex shrink-0 items-center gap-2.5">
-          <span className="flex size-[26px] items-center justify-center rounded-lg bg-primary text-[15px] font-black text-primary-foreground">
-            S
-          </span>
+          <Logomark size={26} />
           <span className="font-mono text-[12px] font-bold tracking-[0.18em] text-foreground sm:text-[13px] sm:tracking-[0.22em]">
             SUPERSTACK
           </span>

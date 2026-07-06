@@ -7,6 +7,7 @@ import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
+import { Logomark } from "@/components/brand/logo";
 
 const si = (slug: string) => `https://cdn.simpleicons.org/${slug}`;
 
@@ -204,9 +205,7 @@ function MinimalMini() {
           <span className="font-mono text-[8px] text-[#B4A78E]">
             superstack.app
           </span>
-          <span className="flex size-[13px] items-center justify-center rounded bg-primary text-[7px] font-black text-primary-foreground">
-            S
-          </span>
+          <Logomark size={13} />
         </div>
       </div>
     </div>

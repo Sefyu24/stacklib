@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import Playground from "@/components/landing/playground";
 import HeroCards from "@/components/landing/heroCards";
+import { Logomark } from "@/components/brand/logo";
 
 // Design-exact inline glyphs (server-safe; the design ships these SVG paths)
 function DragDots() {
@@ -66,9 +67,7 @@ export default function Home() {
       {/* ===== NAV (floating pill) ===== */}
       <header className="fixed left-1/2 top-6 z-50 flex w-[min(92%,720px)] -translate-x-1/2 items-center justify-between gap-4 rounded-full border border-[#E4DAC6] bg-[#FFFDF8]/70 py-2.5 pl-[22px] pr-3 shadow-[0_8px_24px_rgba(60,40,10,0.08)] backdrop-blur-xl">
         <Link href="/" className="flex flex-none items-center gap-[9px]">
-          <span className="flex size-6 items-center justify-center rounded-lg bg-primary text-[13px] font-black text-primary-foreground">
-            S
-          </span>
+          <Logomark size={24} />
           <span className="font-mono text-xs font-bold tracking-[0.2em]">
             SUPERSTACK
           </span>
@@ -552,9 +551,7 @@ export default function Home() {
                   <span className="font-mono text-[8.5px] text-[#B4A78E]">
                     superstack.app/you
                   </span>
-                  <span className="flex size-[13px] items-center justify-center rounded bg-primary text-[7px] font-black text-primary-foreground">
-                    S
-                  </span>
+                  <Logomark size={13} />
                 </div>
               </div>
             </div>
@@ -565,9 +562,7 @@ export default function Home() {
       {/* ===== FOOTER ===== */}
       <footer className="flex flex-wrap items-center justify-between gap-4 bg-foreground px-6 py-[26px] text-[#B4A78E] sm:px-10">
         <div className="flex items-center gap-[9px]">
-          <span className="flex size-5 items-center justify-center rounded-md bg-primary text-[11px] font-black text-primary-foreground">
-            S
-          </span>
+          <Logomark size={20} ink="#F0E6D2" accent="#EC5B13" />
           <span className="font-mono text-[11px] font-bold tracking-[0.2em] text-[#F0E6D2]">
             SUPERSTACK
           </span>

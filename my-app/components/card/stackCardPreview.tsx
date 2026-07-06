@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import LogoFramework from "@/app/stack/logo-framework";
+import { Logomark } from "@/components/brand/logo";
 import {
   getCardSections,
   getCardStats,
@@ -349,9 +350,7 @@ function CardMinimal({
             <span className="font-mono text-[9.5px] text-[#B4A78E]">
               superstack.app
             </span>
-            <span className="flex size-3.5 items-center justify-center rounded bg-primary text-[8px] font-black text-primary-foreground">
-              S
-            </span>
+            <Logomark size={14} />
           </div>
         )}
       </div>
