@@ -11,7 +11,9 @@ import {
   CatalogTool,
   CatalogCategory,
 } from "@/lib/catalog";
-import UniversalSearch from "@/components/builder/universalSearch";
+import UniversalSearch, {
+  BrandPick,
+} from "@/components/builder/universalSearch";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
 import SectionBlock from "@/components/builder/sectionBlock";
@@ -136,30 +138,16 @@ export default function StackEditor() {
     toast.success(`${tool.name} added to ${CATEGORY_LABELS[tool.category]}`);
   }
 
-  async function handleAddCustom(name: string) {
-    // Enrich unknown tools with a Brandfetch logo where possible.
-    let domain: string | undefined;
-    let logoUrl: string | undefined;
-    try {
-      const res = await fetch(
-        `/api/brandfetch/search?name=${encodeURIComponent(name)}`
-      );
-      if (res.ok) {
-        const brands = (await res.json()) as {
-          domain?: string;
-          icon?: string | null;
-        }[];
-        const top = brands.find((b) => b.icon) ?? brands[0];
-        if (top) {
-          domain = top.domain;
-          logoUrl = top.icon ?? undefined;
-        }
-      }
-    } catch {
-      // fall through — the tool is still added, just without a logo
-    }
-    await appendTool("other", { name, domain, logoUrl });
-    toast.success(`${name} added to Other`);
+  async function handleAddBrand(brand: BrandPick, category: CatalogCategory) {
+    // The user picked the brand (or plain text) themselves in the search
+    // dropdown — no silent first-hit guessing. The domain drives the
+    // durable logo capture server-side.
+    await appendTool(category, {
+      name: brand.name,
+      domain: brand.domain,
+      logoUrl: brand.logoUrl,
+    });
+    toast.success(`${brand.name} added to ${CATEGORY_LABELS[category]}`);
   }
 
   async function handleReorder(
@@ -336,7 +324,7 @@ export default function StackEditor() {
           <UniversalSearch
             selectedNames={selectedNames}
             onAddCatalog={handleAddCatalog}
-            onAddCustom={handleAddCustom}
+            onAddBrand={handleAddBrand}
           />
 
           <div className="flex flex-col gap-[26px]">
