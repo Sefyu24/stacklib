@@ -8,7 +8,8 @@ import {
   DragOverlay,
   DragStartEvent,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   UniqueIdentifier,
   closestCenter,
   getFirstCollision,
@@ -131,8 +132,16 @@ export default function SectionsBoard({
     return [{ id: overId }];
   }, []);
 
+  // Whole rows are drag handles, so mouse and touch need different
+  // activation rules: a small distance for mouse, and long-press for touch
+  // (rows use touch-action: manipulation, NOT none, so one-finger page
+  // scrolling keeps working — the 250ms hold is what opts into a drag,
+  // the standard mobile kanban pattern).
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 8 },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })

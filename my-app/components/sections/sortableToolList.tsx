@@ -1,5 +1,11 @@
 "use client";
 
+import type {
+  KeyboardEvent,
+  MouseEvent,
+  PointerEvent,
+  TouchEvent,
+} from "react";
 import {
   SortableContext,
   useSortable,
@@ -75,24 +81,50 @@ function SortableRow({
   onTogglePin: () => void;
   onRemove: () => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
 
   return (
+    // The WHOLE row is the drag handle — grab it anywhere. The pin/remove
+    // buttons opt out by stopping activator events (see ToolRowView).
+    // touch-manipulation (not touch-none) keeps page scrolling alive on
+    // mobile; the TouchSensor's long-press delay handles drag activation.
     <li
-      ref={setNodeRef}
+      ref={(node) => {
+        setNodeRef(node);
+        setActivatorNodeRef(node);
+      }}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cn(isDragging && "opacity-40")}
+      className={cn(
+        "cursor-grab touch-manipulation select-none active:cursor-grabbing",
+        isDragging && "opacity-40"
+      )}
+      {...attributes}
+      {...listeners}
     >
-      <ToolRowView
-        tool={tool}
-        onTogglePin={onTogglePin}
-        onRemove={onRemove}
-        handleProps={{ ...attributes, ...listeners }}
-      />
+      <ToolRowView tool={tool} onTogglePin={onTogglePin} onRemove={onRemove} />
     </li>
   );
 }
+
+/**
+ * Keep a press on pin/remove from ever activating a row drag: stop the
+ * sensor activator events (mousedown/touchstart/keydown + pointerdown for
+ * safety) from bubbling to the row. Clicks still fire on the buttons.
+ */
+const stopDragActivation = {
+  onPointerDown: (e: PointerEvent) => e.stopPropagation(),
+  onMouseDown: (e: MouseEvent) => e.stopPropagation(),
+  onTouchStart: (e: TouchEvent) => e.stopPropagation(),
+  onKeyDown: (e: KeyboardEvent) => e.stopPropagation(),
+};
 
 /**
  * The row itself, presentation-only — shared by the sortable rows and the
@@ -102,13 +134,11 @@ export function ToolRowView({
   tool,
   onTogglePin,
   onRemove,
-  handleProps,
   overlay,
 }: {
   tool: SortableTool;
   onTogglePin?: () => void;
   onRemove?: () => void;
-  handleProps?: Record<string, unknown>;
   overlay?: boolean;
 }) {
   return (
@@ -121,14 +151,10 @@ export function ToolRowView({
         overlay && "shadow-[0_8px_24px_rgba(60,40,10,0.25)]"
       )}
     >
-      <button
-        type="button"
-        className="cursor-grab touch-none text-[#C9BCA2] hover:text-[#A0713C] active:cursor-grabbing"
-        aria-label={`Drag ${tool.name}`}
-        {...(handleProps ?? {})}
-      >
+      {/* Purely visual affordance — the whole row is the drag handle. */}
+      <span aria-hidden className="text-[#C9BCA2]">
         <HugeiconsIcon icon={DragDropVerticalIcon} className="h-[14px] w-[14px]" />
-      </button>
+      </span>
 
       <LogoFramework
         name={tool.name}
@@ -151,6 +177,7 @@ export function ToolRowView({
         variant="ghost"
         size="icon-sm"
         onClick={onTogglePin}
+        {...stopDragActivation}
         aria-label={
           tool.pinned ? `Unpin ${tool.name} from card` : `Pin ${tool.name} to card`
         }
@@ -171,6 +198,7 @@ export function ToolRowView({
         variant="ghost"
         size="icon-sm"
         onClick={onRemove}
+        {...stopDragActivation}
         aria-label={`Remove ${tool.name}`}
         className="size-7 rounded-lg text-[#B4A78E] hover:bg-[#F8E0D8] hover:text-destructive"
       >
