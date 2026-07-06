@@ -21,6 +21,7 @@ export const getStack = query({
     cardTheme: v.optional(v.string()),
     subtitle: v.optional(v.string()),
     showWatermark: v.optional(v.boolean()),
+    isPublic: v.optional(v.boolean()),
     authorName: v.optional(v.string()),
     authorHandle: v.optional(v.string()),
     authorAvatarUrl: v.optional(v.string()),
