@@ -159,6 +159,8 @@ export default function StackEditor() {
       await reorderToolsMutation({ sectionId, orderedToolIds });
     } catch (err) {
       console.error("Error reordering tools:", err);
+      toast.error("Couldn't save the new order. Please try again.");
+      throw err;
     }
   }
 
@@ -199,6 +201,7 @@ export default function StackEditor() {
     } catch (err) {
       console.error("Error moving tool:", err);
       toast.error("Couldn't move that tool. Please try again.");
+      throw err;
     }
   }
 

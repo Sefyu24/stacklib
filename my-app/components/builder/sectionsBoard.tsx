@@ -1,16 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  CollisionDetection,
   DndContext,
   DragEndEvent,
   DragOverEvent,
   DragOverlay,
   DragStartEvent,
   KeyboardSensor,
+  MeasuringStrategy,
   PointerSensor,
   UniqueIdentifier,
-  closestCorners,
+  closestCenter,
+  getFirstCollision,
+  pointerWithin,
+  rectIntersection,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -58,13 +63,16 @@ function buildBoard(sections: Section[]): Board {
 interface SectionsBoardProps {
   sections: Section[];
   onAddCatalog: (tool: CatalogTool) => void;
-  onReorder: (sectionId: Id<"sections">, toolIds: Id<"tools">[]) => void;
+  onReorder: (
+    sectionId: Id<"sections">,
+    toolIds: Id<"tools">[]
+  ) => Promise<void>;
   onMove: (
     toolId: Id<"tools">,
     fromSectionId: Id<"sections">,
     toSectionId: Id<"sections">,
     targetIndex: number
-  ) => void;
+  ) => Promise<void>;
   onTogglePin: (sectionId: Id<"sections">, toolId: Id<"tools">) => void;
   onRemove: (sectionId: Id<"sections">, toolId: Id<"tools">) => void;
 }
@@ -85,13 +93,69 @@ export default function SectionsBoard({
 }: SectionsBoardProps) {
   const [board, setBoard] = useState<Board>(() => buildBoard(sections));
   const [activeTool, setActiveTool] = useState<SortableTool | null>(null);
+  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   // Where the active row started, for the end-of-drag mutation.
   const originRef = useRef<string | null>(null);
   const draggingRef = useRef(false);
+  // Canonical dnd-kit multi-container guards: without them, moving a row
+  // into another section collapses the origin list, collision detection
+  // flips back, and onDragOver oscillates until React hits its update
+  // depth limit (error #185).
+  const boardRef = useRef(board);
+  boardRef.current = board;
+  const lastOverId = useRef<UniqueIdentifier | null>(null);
+  const recentlyMoved = useRef(false);
 
   useEffect(() => {
     if (!draggingRef.current) setBoard(buildBoard(sections));
   }, [sections]);
+
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      recentlyMoved.current = false;
+    });
+  }, [board]);
+
+  /**
+   * Pointer-first collision: after a row transfers to the section under the
+   * pointer, the pointer is still inside that section, so the choice is
+   * stable frame-to-frame. When hovering a non-empty section, pick the
+   * closest row inside it; while layout is settling after a transfer, stick
+   * with the last target instead of re-deciding.
+   */
+  const collisionStrategy: CollisionDetection = useCallback(
+    (args) => {
+      const pointerHits = pointerWithin(args);
+      const hits = pointerHits.length > 0 ? pointerHits : rectIntersection(args);
+      let overId = getFirstCollision(hits, "id");
+
+      if (overId != null) {
+        const containerItems = boardRef.current[overId as string];
+        if (containerItems) {
+          // Over a section container: narrow to its closest row, if any.
+          if (containerItems.length > 0) {
+            const closest = closestCenter({
+              ...args,
+              droppableContainers: args.droppableContainers.filter(
+                (c) =>
+                  c.id !== overId &&
+                  containerItems.some((t) => t.toolId === c.id)
+              ),
+            });
+            if (closest.length > 0) overId = closest[0].id;
+          }
+        }
+        lastOverId.current = overId;
+        return [{ id: overId }];
+      }
+
+      if (recentlyMoved.current && activeId) {
+        lastOverId.current = activeId;
+      }
+      return lastOverId.current ? [{ id: lastOverId.current }] : [];
+    },
+    [activeId]
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -112,6 +176,8 @@ export default function SectionsBoard({
     if (!container) return;
     draggingRef.current = true;
     originRef.current = container;
+    lastOverId.current = null;
+    setActiveId(active.id);
     setActiveTool(
       board[container].find((t) => t.toolId === active.id) ?? null
     );
@@ -127,8 +193,21 @@ export default function SectionsBoard({
     setBoard((prev) => {
       const moving = prev[from].find((t) => t.toolId === active.id);
       if (!moving) return prev;
-      const overIndex = prev[to].findIndex((t) => t.toolId === over.id);
-      const insertAt = overIndex === -1 ? prev[to].length : overIndex;
+      let insertAt: number;
+      if (prev[over.id as string]) {
+        // Dropped over the section body itself (e.g. an empty section).
+        insertAt = prev[to].length;
+      } else {
+        const overIndex = prev[to].findIndex((t) => t.toolId === over.id);
+        const isBelowOverItem =
+          active.rect.current.translated &&
+          active.rect.current.translated.top > over.rect.top + over.rect.height;
+        insertAt =
+          overIndex === -1
+            ? prev[to].length
+            : overIndex + (isBelowOverItem ? 1 : 0);
+      }
+      recentlyMoved.current = true;
       return {
         ...prev,
         [from]: prev[from].filter((t) => t.toolId !== active.id),
@@ -144,6 +223,7 @@ export default function SectionsBoard({
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     draggingRef.current = false;
     setActiveTool(null);
+    setActiveId(null);
     const origin = originRef.current;
     originRef.current = null;
 
@@ -162,7 +242,7 @@ export default function SectionsBoard({
       onReorder(
         container as Id<"sections">,
         next.map((t) => t.toolId)
-      );
+      ).catch(() => setBoard(buildBoard(sections)));
       return;
     }
 
@@ -174,12 +254,13 @@ export default function SectionsBoard({
       origin as Id<"sections">,
       container as Id<"sections">,
       index === -1 ? board[container].length : index
-    );
+    ).catch(() => setBoard(buildBoard(sections)));
   };
 
   const handleDragCancel = () => {
     draggingRef.current = false;
     setActiveTool(null);
+    setActiveId(null);
     originRef.current = null;
     setBoard(buildBoard(sections));
   };
@@ -187,7 +268,8 @@ export default function SectionsBoard({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={collisionStrategy}
+      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
