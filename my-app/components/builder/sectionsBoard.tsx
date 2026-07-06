@@ -5,11 +5,9 @@ import {
   CollisionDetection,
   DndContext,
   DragEndEvent,
-  DragOverEvent,
   DragOverlay,
   DragStartEvent,
   KeyboardSensor,
-  MeasuringStrategy,
   PointerSensor,
   UniqueIdentifier,
   closestCenter,
@@ -93,69 +91,45 @@ export default function SectionsBoard({
 }: SectionsBoardProps) {
   const [board, setBoard] = useState<Board>(() => buildBoard(sections));
   const [activeTool, setActiveTool] = useState<SortableTool | null>(null);
-  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   // Where the active row started, for the end-of-drag mutation.
   const originRef = useRef<string | null>(null);
   const draggingRef = useRef(false);
-  // Canonical dnd-kit multi-container guards: without them, moving a row
-  // into another section collapses the origin list, collision detection
-  // flips back, and onDragOver oscillates until React hits its update
-  // depth limit (error #185).
+  // Rows do NOT transfer between sections mid-drag. Our sections stack
+  // vertically, so a live transfer shifts every section below it, which
+  // changes what's under the pointer without it moving — collision then
+  // re-decides, transfers back, and the nested update loop crashes React
+  // (error #185). Instead: highlight the target while dragging (isOver on
+  // the section droppable), and perform the move ONCE at drop.
   const boardRef = useRef(board);
   boardRef.current = board;
-  const lastOverId = useRef<UniqueIdentifier | null>(null);
-  const recentlyMoved = useRef(false);
 
   useEffect(() => {
     if (!draggingRef.current) setBoard(buildBoard(sections));
   }, [sections]);
 
-  useEffect(() => {
-    requestAnimationFrame(() => {
-      recentlyMoved.current = false;
-    });
-  }, [board]);
-
   /**
-   * Pointer-first collision: after a row transfers to the section under the
-   * pointer, the pointer is still inside that section, so the choice is
-   * stable frame-to-frame. When hovering a non-empty section, pick the
-   * closest row inside it; while layout is settling after a transfer, stick
-   * with the last target instead of re-deciding.
+   * Pointer-first collision, stable because the board's layout never
+   * changes during a drag. Hovering a non-empty section narrows to its
+   * closest row so within-section sorting still feels precise.
    */
-  const collisionStrategy: CollisionDetection = useCallback(
-    (args) => {
-      const pointerHits = pointerWithin(args);
-      const hits = pointerHits.length > 0 ? pointerHits : rectIntersection(args);
-      let overId = getFirstCollision(hits, "id");
+  const collisionStrategy: CollisionDetection = useCallback((args) => {
+    const pointerHits = pointerWithin(args);
+    const hits = pointerHits.length > 0 ? pointerHits : rectIntersection(args);
+    let overId = getFirstCollision(hits, "id");
+    if (overId == null) return [];
 
-      if (overId != null) {
-        const containerItems = boardRef.current[overId as string];
-        if (containerItems) {
-          // Over a section container: narrow to its closest row, if any.
-          if (containerItems.length > 0) {
-            const closest = closestCenter({
-              ...args,
-              droppableContainers: args.droppableContainers.filter(
-                (c) =>
-                  c.id !== overId &&
-                  containerItems.some((t) => t.toolId === c.id)
-              ),
-            });
-            if (closest.length > 0) overId = closest[0].id;
-          }
-        }
-        lastOverId.current = overId;
-        return [{ id: overId }];
-      }
-
-      if (recentlyMoved.current && activeId) {
-        lastOverId.current = activeId;
-      }
-      return lastOverId.current ? [{ id: lastOverId.current }] : [];
-    },
-    [activeId]
-  );
+    const containerItems = boardRef.current[overId as string];
+    if (containerItems && containerItems.length > 0) {
+      const closest = closestCenter({
+        ...args,
+        droppableContainers: args.droppableContainers.filter(
+          (c) => c.id !== overId && containerItems.some((t) => t.toolId === c.id)
+        ),
+      });
+      if (closest.length > 0) overId = closest[0].id;
+    }
+    return [{ id: overId }];
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -176,91 +150,76 @@ export default function SectionsBoard({
     if (!container) return;
     draggingRef.current = true;
     originRef.current = container;
-    lastOverId.current = null;
-    setActiveId(active.id);
     setActiveTool(
       board[container].find((t) => t.toolId === active.id) ?? null
     );
   };
 
-  // Cross-section moves happen live in local state so the row visually
-  // leaves one list and joins the other while dragging.
-  const handleDragOver = ({ active, over }: DragOverEvent) => {
-    if (!over) return;
-    const from = findContainer(active.id);
-    const to = findContainer(over.id);
-    if (!from || !to || from === to) return;
-    setBoard((prev) => {
-      const moving = prev[from].find((t) => t.toolId === active.id);
-      if (!moving) return prev;
-      let insertAt: number;
-      if (prev[over.id as string]) {
-        // Dropped over the section body itself (e.g. an empty section).
-        insertAt = prev[to].length;
-      } else {
-        const overIndex = prev[to].findIndex((t) => t.toolId === over.id);
-        const isBelowOverItem =
-          active.rect.current.translated &&
-          active.rect.current.translated.top > over.rect.top + over.rect.height;
-        insertAt =
-          overIndex === -1
-            ? prev[to].length
-            : overIndex + (isBelowOverItem ? 1 : 0);
-      }
-      recentlyMoved.current = true;
-      return {
-        ...prev,
-        [from]: prev[from].filter((t) => t.toolId !== active.id),
-        [to]: [
-          ...prev[to].slice(0, insertAt),
-          moving,
-          ...prev[to].slice(insertAt),
-        ],
-      };
-    });
-  };
-
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     draggingRef.current = false;
     setActiveTool(null);
-    setActiveId(null);
     const origin = originRef.current;
     originRef.current = null;
 
-    const container = findContainer(active.id);
-    if (!origin || !container) return;
+    if (!origin || !over) return;
+    // The board is untouched during the drag, so the drop target comes
+    // straight from `over`: either a section container or a row in one.
+    const target = findContainer(over.id);
+    if (!target) return;
 
-    if (container === origin) {
+    if (target === origin) {
       // Same section: a plain reorder.
-      if (!over || active.id === over.id) return;
-      const items = board[container];
+      if (active.id === over.id) return;
+      const items = board[origin];
       const oldIndex = items.findIndex((t) => t.toolId === active.id);
       const newIndex = items.findIndex((t) => t.toolId === over.id);
       if (oldIndex === -1 || newIndex === -1) return;
       const next = arrayMove(items, oldIndex, newIndex);
-      setBoard((prev) => ({ ...prev, [container]: next }));
+      setBoard((prev) => ({ ...prev, [origin]: next }));
       onReorder(
-        container as Id<"sections">,
+        origin as Id<"sections">,
         next.map((t) => t.toolId)
       ).catch(() => setBoard(buildBoard(sections)));
       return;
     }
 
-    // Cross-section: local state already reflects the move (handleDragOver);
-    // persist it at the position it landed.
-    const index = board[container].findIndex((t) => t.toolId === active.id);
+    // Cross-section: transfer once, at drop.
+    const moving = board[origin].find((t) => t.toolId === active.id);
+    if (!moving) return;
+    let insertAt: number;
+    if (board[over.id as string]) {
+      // Dropped on the section body itself (e.g. an empty section).
+      insertAt = board[target].length;
+    } else {
+      const overIndex = board[target].findIndex((t) => t.toolId === over.id);
+      const isBelowOverItem =
+        active.rect.current.translated &&
+        active.rect.current.translated.top > over.rect.top + over.rect.height;
+      insertAt =
+        overIndex === -1
+          ? board[target].length
+          : overIndex + (isBelowOverItem ? 1 : 0);
+    }
+    setBoard((prev) => ({
+      ...prev,
+      [origin]: prev[origin].filter((t) => t.toolId !== active.id),
+      [target]: [
+        ...prev[target].slice(0, insertAt),
+        moving,
+        ...prev[target].slice(insertAt),
+      ],
+    }));
     onMove(
       active.id as Id<"tools">,
       origin as Id<"sections">,
-      container as Id<"sections">,
-      index === -1 ? board[container].length : index
+      target as Id<"sections">,
+      insertAt
     ).catch(() => setBoard(buildBoard(sections)));
   };
 
   const handleDragCancel = () => {
     draggingRef.current = false;
     setActiveTool(null);
-    setActiveId(null);
     originRef.current = null;
     setBoard(buildBoard(sections));
   };
@@ -269,9 +228,7 @@ export default function SectionsBoard({
     <DndContext
       sensors={sensors}
       collisionDetection={collisionStrategy}
-      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
       onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
     >

@@ -28,6 +28,14 @@ export async function assertCanActAs(
   ownerId: string | undefined
 ): Promise<void> {
   if (!(await canActAs(ctx, ownerId))) {
+    // Diagnostic breadcrumb (dev deployment): distinguishes "no token on
+    // the socket" from "signed in as a different user" in `convex logs`.
+    const identity = await ctx.auth.getUserIdentity();
+    console.warn("authz denied", {
+      hasIdentity: Boolean(identity),
+      caller: identity?.subject?.slice(0, 14) ?? null,
+      owner: ownerId?.slice(0, 14) ?? null,
+    });
     throw new Error("Not authorized");
   }
 }
