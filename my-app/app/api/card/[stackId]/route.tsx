@@ -17,7 +17,7 @@ export const runtime = "nodejs";
 
 const CARD_WIDTH = 1200;
 const CARD_HEIGHT = 630;
-const LOGO_FETCH_TIMEOUT_MS = 1500;
+const LOGO_FETCH_TIMEOUT_MS = 5000;
 
 // Same faces the live preview uses in the browser (loaded there via
 // next/font). Satori can't see browser fonts, so the PNG only matches the
@@ -82,6 +82,7 @@ async function fetchLogoAsDataUri(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
       signal: AbortSignal.timeout(LOGO_FETCH_TIMEOUT_MS),
+      headers: { "User-Agent": "Superstack/1.0 (+https://superstack.app)" },
     });
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());

@@ -8,6 +8,8 @@
  * @module
  */
 
+import type * as authz from "../authz.js";
+import type * as logoActions from "../logoActions.js";
 import type * as profiles from "../profiles.js";
 import type * as seed from "../seed.js";
 import type * as stacks from "../stacks.js";
@@ -28,6 +30,8 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  authz: typeof authz;
+  logoActions: typeof logoActions;
   profiles: typeof profiles;
   seed: typeof seed;
   stacks: typeof stacks;

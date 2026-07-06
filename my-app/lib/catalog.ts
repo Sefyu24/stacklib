@@ -8,64 +8,71 @@ export type CatalogCategory = "frontend" | "backend" | "ide" | "ai" | "other";
 export interface CatalogTool {
   name: string;
   slug: string;
+  domain: string;
   category: CatalogCategory;
 }
 
-const RAW: Record<CatalogCategory, [string, string][]> = {
+// Each entry is [name, simpleIconsSlug, brandfetchDomain]. The domain is the
+// tool's canonical primary domain, used to resolve the correct Brandfetch
+// brand page (and therefore the right logo).
+const RAW: Record<CatalogCategory, [string, string, string][]> = {
   frontend: [
-    ["React", "react"],
-    ["Next.js", "nextdotjs"],
-    ["Vue.js", "vuedotjs"],
-    ["Svelte", "svelte"],
-    ["Angular", "angular"],
-    ["Astro", "astro"],
-    ["Remix", "remix"],
-    ["SolidJS", "solid"],
-    ["Nuxt", "nuxt"],
-    ["Tailwind CSS", "tailwindcss"],
-    ["shadcn/ui", "shadcnui"],
-    ["Vite", "vite"],
+    ["React", "react", "react.dev"],
+    ["Next.js", "nextdotjs", "nextjs.org"],
+    ["Vue.js", "vuedotjs", "vuejs.org"],
+    ["Svelte", "svelte", "svelte.dev"],
+    ["Angular", "angular", "angular.dev"],
+    ["Astro", "astro", "astro.build"],
+    ["Remix", "remix", "remix.run"],
+    ["SolidJS", "solid", "solidjs.com"],
+    ["Nuxt", "nuxt", "nuxt.com"],
+    ["Tailwind CSS", "tailwindcss", "tailwindcss.com"],
+    ["shadcn/ui", "shadcnui", "ui.shadcn.com"],
+    ["Vite", "vite", "vitejs.dev"],
   ],
   backend: [
-    ["Node.js", "nodedotjs"],
-    ["Convex", "convex"],
-    ["Supabase", "supabase"],
-    ["Firebase", "firebase"],
-    ["PostgreSQL", "postgresql"],
-    ["Express", "express"],
-    ["Django", "django"],
-    ["Redis", "redis"],
-    ["Go", "go"],
-    ["Bun", "bun"],
-    ["Prisma", "prisma"],
+    ["Node.js", "nodedotjs", "nodejs.org"],
+    ["Convex", "convex", "convex.dev"],
+    ["Supabase", "supabase", "supabase.com"],
+    ["Firebase", "firebase", "firebase.google.com"],
+    ["PostgreSQL", "postgresql", "postgresql.org"],
+    ["Express", "express", "expressjs.com"],
+    ["Django", "django", "djangoproject.com"],
+    ["Redis", "redis", "redis.io"],
+    ["Go", "go", "go.dev"],
+    ["Bun", "bun", "bun.sh"],
+    ["Prisma", "prisma", "prisma.io"],
   ],
   ide: [
-    ["VS Code", "vscode"],
-    ["Cursor", "cursor"],
-    ["Neovim", "neovim"],
-    ["Zed", "zedindustries"],
-    ["WebStorm", "webstorm"],
-    ["Vim", "vim"],
-    ["Xcode", "xcode"],
+    // vscode.dev is the domain Brandfetch keys the VS Code brand to
+    // (code.visualstudio.com has no entry and the root resolves to the
+    // purple Visual Studio brand instead).
+    ["VS Code", "vscode", "vscode.dev"],
+    ["Cursor", "cursor", "cursor.com"],
+    ["Neovim", "neovim", "neovim.io"],
+    ["Zed", "zedindustries", "zed.dev"],
+    ["WebStorm", "webstorm", "jetbrains.com"],
+    ["Vim", "vim", "vim.org"],
+    ["Xcode", "xcode", "developer.apple.com"],
   ],
   ai: [
-    ["Claude", "claude"],
-    ["ChatGPT", "openai"],
-    ["GitHub Copilot", "githubcopilot"],
-    ["v0", "v0"],
-    ["Ollama", "ollama"],
-    ["Perplexity", "perplexity"],
-    ["Midjourney", "midjourney"],
+    ["Claude", "claude", "claude.ai"],
+    ["ChatGPT", "openai", "openai.com"],
+    ["GitHub Copilot", "githubcopilot", "github.com"],
+    ["v0", "v0", "v0.dev"],
+    ["Ollama", "ollama", "ollama.com"],
+    ["Perplexity", "perplexity", "perplexity.ai"],
+    ["Midjourney", "midjourney", "midjourney.com"],
   ],
   other: [
-    ["GitHub", "github"],
-    ["Vercel", "vercel"],
-    ["Docker", "docker"],
-    ["Figma", "figma"],
-    ["Stripe", "stripe"],
-    ["Linear", "linear"],
-    ["Notion", "notion"],
-    ["Railway", "railway"],
+    ["GitHub", "github", "github.com"],
+    ["Vercel", "vercel", "vercel.com"],
+    ["Docker", "docker", "docker.com"],
+    ["Figma", "figma", "figma.com"],
+    ["Stripe", "stripe", "stripe.com"],
+    ["Linear", "linear", "linear.app"],
+    ["Notion", "notion", "notion.so"],
+    ["Railway", "railway", "railway.app"],
   ],
 };
 
@@ -86,7 +93,7 @@ export const CATEGORY_ORDER: CatalogCategory[] = [
 ];
 
 export const CATALOG: CatalogTool[] = CATEGORY_ORDER.flatMap((category) =>
-  RAW[category].map(([name, slug]) => ({ name, slug, category }))
+  RAW[category].map(([name, slug, domain]) => ({ name, slug, domain, category }))
 );
 
 export const SUGGESTIONS: Record<CatalogCategory, string[]> = {

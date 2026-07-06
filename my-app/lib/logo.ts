@@ -1,6 +1,10 @@
-// Resolves a tool's logo URL. Order: Simple Icons slug (crisp, no-auth SVG) →
-// stored Brandfetch logo → Brandfetch CDN by domain. Returns null when there's
-// nothing to show, so callers can render the letter-tile fallback.
+// Resolves a tool's logo URL. Order: stored logo (a Convex-storage PNG we
+// captured from Brandfetch at add/enrichment time) → Simple Icons slug as a
+// fallback → null, so callers render the letter-tile.
+//
+// Brandfetch search-result icon URLs (cdn.brandfetch.io/...?c=1ax<ts>...)
+// carry expiring tokens — they 410 after a while, so they are treated as
+// absent here; the enrichment action re-captures them into Convex storage.
 
 export interface LogoInput {
   iconSlug?: string | null;
@@ -8,25 +12,26 @@ export interface LogoInput {
   url?: string | null;
 }
 
+function isExpiringBrandfetchUrl(url: string): boolean {
+  return url.includes("cdn.brandfetch.io");
+}
+
 export function toolLogoUrl(
   tool: LogoInput,
   opts?: { png?: boolean }
 ): string | null {
+  if (tool.logoUrl && !isExpiringBrandfetchUrl(tool.logoUrl)) {
+    return tool.logoUrl;
+  }
   if (tool.iconSlug) {
+    // Simple Icons serves SVG, which both browsers and satori decode.
     return `https://cdn.simpleicons.org/${tool.iconSlug}`;
   }
-  if (tool.logoUrl) {
-    // Brandfetch search returns .webp; satori (OG) needs a raster it can
-    // decode, so request .png there. Browsers handle either.
-    return opts?.png
-      ? tool.logoUrl.replace(/\.webp(\?|$)/, ".png$1")
-      : tool.logoUrl;
-  }
-  if (tool.url) {
-    const clientId = process.env.NEXT_PUBLIC_BRANDFETCH_CLIENT_ID;
-    return `https://cdn.brandfetch.io/${tool.url}/w/128/h/128/fallback/lettermark/icon.png${
-      clientId ? `?c=${clientId}` : ""
-    }`;
+  // A stale tokenized URL is better than nothing in the browser (it may
+  // still be within its TTL) but useless to satori, which needs a raster
+  // it can trust.
+  if (tool.logoUrl && !opts?.png) {
+    return tool.logoUrl;
   }
   return null;
 }
