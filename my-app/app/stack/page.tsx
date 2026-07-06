@@ -16,7 +16,7 @@ import UniversalSearch, {
 } from "@/components/builder/universalSearch";
 import { Input } from "@/components/ui/input";
 import { Toggle } from "@/components/ui/toggle";
-import SectionBlock from "@/components/builder/sectionBlock";
+import SectionsBoard from "@/components/builder/sectionsBoard";
 import StackCardPreview from "@/components/card/stackCardPreview";
 import GithubImportDialog from "@/components/github/importDialog";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -36,6 +36,7 @@ export default function StackEditor() {
   const getOrCreateTool = useMutation(api.tools.getOrCreateTool);
   const updateToolsMutation = useMutation(api.stacks.updateSectionTools);
   const reorderToolsMutation = useMutation(api.stacks.reorderSectionTools);
+  const moveToolMutation = useMutation(api.stacks.moveToolToSection);
   const togglePinnedMutation = useMutation(api.stacks.togglePinnedTool);
   const updateStackDetailsMutation = useMutation(api.stacks.updateStackDetails);
   const setCardThemeMutation = useMutation(api.stacks.setCardTheme);
@@ -172,18 +173,32 @@ export default function StackEditor() {
     }
   }
 
-  async function handleRemove(
-    sectionId: Id<"sections">,
-    toolId: Id<"tools">,
-    currentIds: Id<"tools">[]
-  ) {
+  async function handleRemove(sectionId: Id<"sections">, toolId: Id<"tools">) {
+    const section = stack!.sections.find((s) => s._id === sectionId);
+    if (!section) return;
     try {
       await updateToolsMutation({
         sectionId,
-        toolIds: currentIds.filter((id) => id !== toolId),
+        toolIds: section.selectedTools
+          .map((st) => st.toolId)
+          .filter((id) => id !== toolId),
       });
     } catch (err) {
       console.error("Error removing tool:", err);
+    }
+  }
+
+  async function handleMove(
+    toolId: Id<"tools">,
+    fromSectionId: Id<"sections">,
+    toSectionId: Id<"sections">,
+    targetIndex: number
+  ) {
+    try {
+      await moveToolMutation({ toolId, fromSectionId, toSectionId, targetIndex });
+    } catch (err) {
+      console.error("Error moving tool:", err);
+      toast.error("Couldn't move that tool. Please try again.");
     }
   }
 
@@ -327,24 +342,14 @@ export default function StackEditor() {
             onAddBrand={handleAddBrand}
           />
 
-          <div className="flex flex-col gap-[26px]">
-            {stack.sections.map((section) => (
-              <SectionBlock
-                key={section._id}
-                section={section}
-                onAddCatalog={handleAddCatalog}
-                onReorder={(ids) => handleReorder(section._id, ids)}
-                onTogglePin={(toolId) => handleTogglePin(section._id, toolId)}
-                onRemove={(toolId) =>
-                  handleRemove(
-                    section._id,
-                    toolId,
-                    section.selectedTools.map((st) => st.toolId)
-                  )
-                }
-              />
-            ))}
-          </div>
+          <SectionsBoard
+            sections={stack.sections}
+            onAddCatalog={handleAddCatalog}
+            onReorder={handleReorder}
+            onMove={handleMove}
+            onTogglePin={handleTogglePin}
+            onRemove={handleRemove}
+          />
         </div>
 
         {/* ============ LIVE PREVIEW ============ */}

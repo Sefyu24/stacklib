@@ -1,5 +1,6 @@
 "use client";
 
+import { useDroppable } from "@dnd-kit/core";
 import SortableToolList, {
   SortableTool,
 } from "@/components/sections/sortableToolList";
@@ -7,57 +8,39 @@ import { api } from "@/convex/_generated/api";
 import { FunctionReturnType } from "convex/server";
 import { Id } from "@/convex/_generated/dataModel";
 import {
-  getSectionDisplay,
-  DisplaySectionInput,
-  SECTION_CARD_CAP,
-} from "@/lib/card/display";
-import {
   SUGGESTIONS,
   findCatalogTool,
   CatalogCategory,
   CatalogTool,
 } from "@/lib/catalog";
+import { cn } from "@/lib/utils";
 
 type StackData = FunctionReturnType<typeof api.stacks.getStack>;
 type Section = StackData["sections"][number];
 
 interface SectionBlockProps {
   section: Section;
+  /** Rows come from the board's optimistic state, not the server section. */
+  tools: SortableTool[];
   onAddCatalog: (tool: CatalogTool) => void;
-  onReorder: (toolIds: Id<"tools">[]) => void;
   onTogglePin: (toolId: Id<"tools">) => void;
   onRemove: (toolId: Id<"tools">) => void;
 }
 
 export default function SectionBlock({
   section,
+  tools,
   onAddCatalog,
-  onReorder,
   onTogglePin,
   onRemove,
 }: SectionBlockProps) {
   const category = section.sectionType as CatalogCategory;
-  const pinnedIds = new Set(section.pinnedTools.map((p) => p.toolId));
-  const pinnedCount = section.pinnedTools.length;
-  const count = section.selectedTools.length;
+  const count = tools.length;
+  const pinnedCount = tools.filter((t) => t.pinned).length;
 
-  // Which tools actually make the card, to drive the "ON CARD" badge.
-  const display = getSectionDisplay(
-    section as unknown as DisplaySectionInput,
-    SECTION_CARD_CAP
-  );
-  const onCardKeys = new Set(display.tools.map((t) => t.toolId));
-  const overflows = count > SECTION_CARD_CAP;
-
-  const tools: SortableTool[] = section.selectedTools.map((st) => ({
-    toolId: st.toolId,
-    name: st.tool.name,
-    url: st.tool.url,
-    logoUrl: st.tool.logoUrl,
-    iconSlug: st.tool.iconSlug,
-    pinned: pinnedIds.has(st.toolId),
-    onCard: onCardKeys.has(st.toolId) && overflows,
-  }));
+  // The whole section body is a drop target so tools can land here even
+  // when the section is empty.
+  const { setNodeRef, isOver } = useDroppable({ id: section._id });
 
   const countLabel =
     count === 0
@@ -66,9 +49,7 @@ export default function SectionBlock({
           pinnedCount ? ` · ${pinnedCount} pinned` : ""
         } · drag to reorder`;
 
-  const selectedNames = new Set(
-    section.selectedTools.map((st) => st.tool.name.toLowerCase())
-  );
+  const selectedNames = new Set(tools.map((t) => t.name.toLowerCase()));
   const suggestions = SUGGESTIONS[category]
     .filter((n) => !selectedNames.has(n.toLowerCase()))
     .map((n) => findCatalogTool(n))
@@ -86,29 +67,38 @@ export default function SectionBlock({
         <span className="h-px flex-1 self-center bg-[#EDE4D2]" />
       </div>
 
-      {count > 0 ? (
-        <SortableToolList
-          tools={tools}
-          onReorder={onReorder}
-          onTogglePin={onTogglePin}
-          onRemove={onRemove}
-        />
-      ) : (
-        <div className="flex flex-wrap items-center gap-2 rounded-[10px] border-[1.5px] border-dashed border-[#E0D5BE] px-3.5 py-3">
-          <span className="text-[12.5px] text-[#B4A78E]">Popular:</span>
-          {suggestions.map((sug) => (
-            <button
-              key={sug.name}
-              type="button"
-              onClick={() => onAddCatalog(sug)}
-              className="flex cursor-pointer items-center gap-1.5 rounded-full border border-[#E0D5BE] bg-card px-[11px] py-[5px] text-[12.5px] font-semibold text-[#6B5D46] transition-colors hover:border-primary hover:text-primary"
-            >
-              <span className="font-extrabold text-primary">+</span>
-              {sug.name}
-            </button>
-          ))}
-        </div>
-      )}
+      <div
+        ref={setNodeRef}
+        className={cn(
+          "rounded-[12px] transition-shadow",
+          isOver && "shadow-[0_0_0_2px_var(--primary)]"
+        )}
+      >
+        {count > 0 ? (
+          <SortableToolList
+            tools={tools}
+            onTogglePin={onTogglePin}
+            onRemove={onRemove}
+          />
+        ) : (
+          <div className="flex flex-wrap items-center gap-2 rounded-[10px] border-[1.5px] border-dashed border-[#E0D5BE] px-3.5 py-3">
+            <span className="text-[12.5px] text-[#B4A78E]">
+              {isOver ? "Drop it here" : "Popular:"}
+            </span>
+            {suggestions.map((sug) => (
+              <button
+                key={sug.name}
+                type="button"
+                onClick={() => onAddCatalog(sug)}
+                className="flex cursor-pointer items-center gap-1.5 rounded-full border border-[#E0D5BE] bg-card px-[11px] py-[5px] text-[12.5px] font-semibold text-[#6B5D46] transition-colors hover:border-primary hover:text-primary"
+              >
+                <span className="font-extrabold text-primary">+</span>
+                {sug.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

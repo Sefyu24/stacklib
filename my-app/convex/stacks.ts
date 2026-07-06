@@ -528,6 +528,94 @@ export const updateSectionTools = mutation({
 });
 
 /**
+ * Move a tool from one section to another (drag & drop across sections),
+ * inserting at `targetIndex` in the destination. The tool's global category
+ * is untouched — placement in a stack is the user's call (React can live in
+ * Backend if they want). A pin travels with the tool when the destination
+ * has room; the source pin is always cleaned up.
+ */
+export const moveToolToSection = mutation({
+  args: {
+    toolId: v.id("tools"),
+    fromSectionId: v.id("sections"),
+    toSectionId: v.id("sections"),
+    targetIndex: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    if (args.fromSectionId === args.toSectionId) return null;
+    await assertSectionOwner(ctx, args.fromSectionId);
+    const from = await ctx.db.get(args.fromSectionId);
+    const to = await ctx.db.get(args.toSectionId);
+    if (!from || !to) throw new Error("Section not found");
+    if (from.stackId !== to.stackId) {
+      throw new Error("Sections belong to different stacks");
+    }
+
+    const fromRows = await ctx.db
+      .query("selectedTools")
+      .withIndex("by_sectionId", (q) => q.eq("sectionId", args.fromSectionId))
+      .collect();
+    const moving = fromRows.find((r) => r.toolId === args.toolId);
+    if (!moving) return null;
+    await ctx.db.delete(moving._id);
+
+    const fromPins = await ctx.db
+      .query("pinnedTools")
+      .withIndex("by_sectionId", (q) => q.eq("sectionId", args.fromSectionId))
+      .collect();
+    const srcPin = fromPins.find((p) => p.toolId === args.toolId);
+    if (srcPin) await ctx.db.delete(srcPin._id);
+
+    const toRows = await ctx.db
+      .query("selectedTools")
+      .withIndex("by_sectionId", (q) => q.eq("sectionId", args.toSectionId))
+      .collect();
+    // Already in the destination? The delete above deduped; nothing to add.
+    if (toRows.some((r) => r.toolId === args.toolId)) return null;
+    toRows.sort(
+      (a, b) => (a.order ?? a._creationTime) - (b.order ?? b._creationTime)
+    );
+
+    const idx = Math.max(0, Math.min(args.targetIndex, toRows.length));
+    const ordered = [
+      ...toRows.slice(0, idx).map((r) => r.toolId),
+      args.toolId,
+      ...toRows.slice(idx).map((r) => r.toolId),
+    ];
+    for (let i = 0; i < ordered.length; i++) {
+      const existing = toRows.find((r) => r.toolId === ordered[i]);
+      if (existing) {
+        if (existing.order !== i) await ctx.db.patch(existing._id, { order: i });
+      } else {
+        await ctx.db.insert("selectedTools", {
+          sectionId: args.toSectionId,
+          toolId: args.toolId,
+          order: i,
+        });
+      }
+    }
+
+    if (srcPin) {
+      const toPins = await ctx.db
+        .query("pinnedTools")
+        .withIndex("by_sectionId", (q) => q.eq("sectionId", args.toSectionId))
+        .collect();
+      if (
+        toPins.length < AUTO_PIN_COUNT &&
+        !toPins.some((p) => p.toolId === args.toolId)
+      ) {
+        await ctx.db.insert("pinnedTools", {
+          sectionId: args.toSectionId,
+          toolId: args.toolId,
+        });
+      }
+    }
+    return null;
+  },
+});
+
+/**
  * Reorder the tools within a section. `orderedToolIds` is the full set of
  * the section's tool ids in their new order.
  */

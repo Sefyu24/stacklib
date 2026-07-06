@@ -1,24 +1,11 @@
 "use client";
 
 import {
-  DndContext,
-  DragEndEvent,
-  KeyboardSensor,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
-import {
   SortableContext,
-  arrayMove,
-  sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { useEffect, useState } from "react";
 import LogoFramework from "@/app/stack/logo-framework";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -42,95 +29,103 @@ export interface SortableTool {
 
 interface SortableToolListProps {
   tools: SortableTool[];
-  onReorder: (orderedToolIds: Id<"tools">[]) => void;
   onTogglePin: (toolId: Id<"tools">) => void;
   onRemove: (toolId: Id<"tools">) => void;
 }
 
+/**
+ * One section's rows inside the board-wide DndContext (see sectionsBoard).
+ * Rows sort within the section and can be dragged into other sections.
+ * Sortable ids are toolIds — the universal search prevents the same tool
+ * name from being added to two sections, so they're unique board-wide.
+ */
 export default function SortableToolList({
   tools,
-  onReorder,
   onTogglePin,
   onRemove,
 }: SortableToolListProps) {
-  // Local order for snappy drag; re-synced whenever server data changes.
-  const [items, setItems] = useState<SortableTool[]>(tools);
-  useEffect(() => setItems(tools), [tools]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIndex = items.findIndex((t) => t.toolId === active.id);
-    const newIndex = items.findIndex((t) => t.toolId === over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
-    const next = arrayMove(items, oldIndex, newIndex);
-    setItems(next);
-    onReorder(next.map((t) => t.toolId));
-  };
-
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      modifiers={[restrictToVerticalAxis]}
-      onDragEnd={handleDragEnd}
+    <SortableContext
+      items={tools.map((t) => t.toolId)}
+      strategy={verticalListSortingStrategy}
     >
-      <SortableContext
-        items={items.map((t) => t.toolId)}
-        strategy={verticalListSortingStrategy}
-      >
-        <ul className="flex flex-col gap-[7px]">
-          {items.map((tool) => (
-            <SortableRow
-              key={tool.toolId}
-              tool={tool}
-              onTogglePin={() => onTogglePin(tool.toolId)}
-              onRemove={() => onRemove(tool.toolId)}
-            />
-          ))}
-        </ul>
-      </SortableContext>
-    </DndContext>
+      <ul className="flex flex-col gap-[7px]">
+        {tools.map((tool) => (
+          <SortableRow
+            key={tool.toolId}
+            id={tool.toolId}
+            tool={tool}
+            onTogglePin={() => onTogglePin(tool.toolId)}
+            onRemove={() => onRemove(tool.toolId)}
+          />
+        ))}
+      </ul>
+    </SortableContext>
   );
 }
 
 function SortableRow({
+  id,
   tool,
   onTogglePin,
   onRemove,
 }: {
+  id: string;
   tool: SortableTool;
   onTogglePin: () => void;
   onRemove: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: tool.toolId });
+    useSortable({ id });
 
   return (
     <li
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn(isDragging && "opacity-40")}
+    >
+      <ToolRowView
+        tool={tool}
+        onTogglePin={onTogglePin}
+        onRemove={onRemove}
+        handleProps={{ ...attributes, ...listeners }}
+      />
+    </li>
+  );
+}
+
+/**
+ * The row itself, presentation-only — shared by the sortable rows and the
+ * DragOverlay clone that follows the pointer across sections.
+ */
+export function ToolRowView({
+  tool,
+  onTogglePin,
+  onRemove,
+  handleProps,
+  overlay,
+}: {
+  tool: SortableTool;
+  onTogglePin?: () => void;
+  onRemove?: () => void;
+  handleProps?: Record<string, unknown>;
+  overlay?: boolean;
+}) {
+  return (
+    <div
       className={cn(
         "flex items-center gap-[11px] rounded-[10px] border px-3 py-[9px]",
         tool.pinned
           ? "border-[#F2CFA6] bg-[#FEF3E7]"
           : "border-border bg-card",
-        isDragging && "z-10 shadow-md"
+        overlay && "shadow-[0_8px_24px_rgba(60,40,10,0.25)]"
       )}
     >
       <button
         type="button"
         className="cursor-grab touch-none text-[#C9BCA2] hover:text-[#A0713C] active:cursor-grabbing"
         aria-label={`Drag ${tool.name}`}
-        {...attributes}
-        {...listeners}
+        {...(handleProps ?? {})}
       >
         <HugeiconsIcon icon={DragDropVerticalIcon} className="h-[14px] w-[14px]" />
       </button>
@@ -181,6 +176,6 @@ function SortableRow({
       >
         <HugeiconsIcon icon={Cancel01Icon} className="h-[13px] w-[13px]" />
       </Button>
-    </li>
+    </div>
   );
 }
