@@ -57,14 +57,15 @@
   --chart-3: hsl(221.4336 86.3731% 54.0624%);
   --chart-4: hsl(223.6587 78.718% 47.8635%);
   --chart-5: hsl(226.5426 70.0108% 39.9224%);
-  --sidebar: hsl(223.8136 0.0004% 98.0256%);
-  --sidebar-foreground: hsl(223.8136 0% 3.9388%);
-  --sidebar-primary: hsl(223.8136 0% 9.0527%);
-  --sidebar-primary-foreground: hsl(223.8136 0.0004% 98.0256%);
-  --sidebar-accent: hsl(223.8136 0.0002% 96.0587%);
-  --sidebar-accent-foreground: hsl(223.8136 0% 9.0527%);
-  --sidebar-border: hsl(223.8136 0.0001% 89.8161%);
-  --sidebar-ring: hsl(223.8136 0% 63.0163%);
+  /* Warm palette sidebar (matches the Second Scent tokens above) */
+  --sidebar: #fffdf8;
+  --sidebar-foreground: #1c1712;
+  --sidebar-primary: #ec5b13;
+  --sidebar-primary-foreground: #fff7ee;
+  --sidebar-accent: #f1eadd;
+  --sidebar-accent-foreground: #1c1712;
+  --sidebar-border: #e8dfce;
+  --sidebar-ring: #ec5b13;
   --font-sans: var(--font-archivo), "Helvetica Neue", Helvetica, Arial,
     sans-serif;
   --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;

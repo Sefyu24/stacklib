@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as profiles from "../profiles.js";
 import type * as seed from "../seed.js";
 import type * as stacks from "../stacks.js";
 import type * as tools from "../tools.js";
@@ -27,6 +28,7 @@ import type {
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  profiles: typeof profiles;
   seed: typeof seed;
   stacks: typeof stacks;
   tools: typeof tools;

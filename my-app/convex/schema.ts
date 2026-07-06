@@ -36,7 +36,24 @@ export default defineSchema({
     authorHandle: v.optional(v.string()),
     authorAvatarUrl: v.optional(v.string()),
     showAvatar: v.optional(v.boolean()),
+    // Whether the stack appears on the owner's public profile.
+    // Missing is treated as false (private).
+    isPublic: v.optional(v.boolean()),
   }).index("by_userId", ["userId"]),
+
+  profiles: defineTable({
+    // Clerk user id (profiles are only for signed-in users, never guests).
+    ownerId: v.string(),
+    // Lowercase URL handle: 3-20 chars, /^[a-z0-9-]+$/.
+    handle: v.string(),
+    displayName: v.string(),
+    // Short one-line description shown under the name.
+    tagline: v.optional(v.string()),
+    bio: v.optional(v.string()),
+    githubUsername: v.optional(v.string()),
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_handle", ["handle"]),
 
   sections: defineTable({
     stackId: v.id("stacks"),
