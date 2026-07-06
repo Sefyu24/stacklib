@@ -21,19 +21,20 @@ The logomark (PDF p9) is an **abstract monogram combining a "2" with two "S" for
 
 **Code**: `my-app/components/brand/logo.tsx` exports `Logomark`. Path data lives in `my-app/lib/brand.ts` (`LOGOMARK_VIEWBOX = "0 0 1500 1617"`, `LOGOMARK_ASPECT`, `LOGOMARK_SWIRLS`, `LOGOMARK_LEAVES`). **Never recreate or re-trace the glyph — always import these.** It's a plain SVG with explicit fills, so it renders identically in the browser and inside satori (OG images).
 
+**The product uses the ALL-ORANGE variant everywhere** — on light *and* dark surfaces (nav, dark footer, card watermarks, OG images, dashboard, favicon). In app code, always render `<Logomark />` with **no `ink`/`accent` overrides**; both props default to `BRAND_ORANGE` (`#EC5B13`) and orange reads well on every app surface. The favicon is `my-app/app/icon.svg` — the same glyph paths from `lib/brand.ts`, every path filled `#EC5B13` on a transparent background (no `.ico`; SVG can't be converted in-repo — noted elsewhere).
+
 ```tsx
-<Logomark size={24} />                              // all-orange (site default)
-<Logomark size={20} ink="#F0E6D2" accent="#EC5B13" /> // ivory+orange on dark (footer)
+<Logomark size={24} />   // all-orange — the only variant the app uses (light AND dark surfaces)
 ```
 
 Variants:
 
 | Variant | When | Props |
 |---|---|---|
-| **All-orange** (site default per user directive) | Light surfaces, nav, card watermarks | default (`ink` and `accent` both default to `BRAND_ORANGE`) |
-| Two-tone onyx + orange | Formal brand contexts | `ink={BRAND_INK}` (swirls ink, leaves orange) |
-| All-ivory | Dark surfaces | `ink="#F6F1E8" accent="#F6F1E8"` (or ivory-adjacent like `#F0E6D2`) |
-| All-onyx | Monochrome print/light contexts | `ink={BRAND_INK} accent={BRAND_INK}` |
+| **All-orange** (the ONLY in-app variant) | Everywhere in the product: light and dark surfaces, nav, footer, card watermarks, favicon | default (`ink` and `accent` both default to `BRAND_ORANGE`) |
+| Two-tone onyx + orange | **Print/marketing only** — never in the app | `ink={BRAND_INK}` (swirls ink, leaves orange) |
+| All-ivory | **Print/marketing only** — never in the app | `ink="#F6F1E8" accent="#F6F1E8"` |
+| All-onyx | **Print/marketing only** — never in the app | `ink={BRAND_INK} accent={BRAND_INK}` |
 
 ### 2.2 Wordmark
 
