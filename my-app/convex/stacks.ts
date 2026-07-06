@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { assertCanActAs, assertSectionOwner, isGuestId } from "./authz";
 
 // ============================================
 // QUERIES (Read Operations)
@@ -194,6 +195,7 @@ export const createStack = mutation({
   },
   returns: v.id("stacks"),
   handler: async (ctx, args) => {
+    await assertCanActAs(ctx, args.userId);
     const stackId = await ctx.db.insert("stacks", {
       name: args.name,
       userId: args.userId,
@@ -229,6 +231,7 @@ export const getOrCreateStack = mutation({
   },
   returns: v.id("stacks"),
   handler: async (ctx, args) => {
+    await assertCanActAs(ctx, args.ownerId);
     const existing = await ctx.db
       .query("stacks")
       .withIndex("by_userId", (q) => q.eq("userId", args.ownerId))
@@ -266,6 +269,15 @@ export const adoptGuestStack = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    // Only the signed-in user may claim a stack onto their own account,
+    // and only guest stacks can be claimed.
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== args.userId) {
+      throw new Error("Not authorized");
+    }
+    if (!isGuestId(args.guestId)) {
+      throw new Error("Only guest stacks can be adopted");
+    }
     const userStack = await ctx.db
       .query("stacks")
       .withIndex("by_userId", (q) => q.eq("userId", args.userId))
@@ -300,6 +312,9 @@ export const setCardTheme = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const stack = await ctx.db.get(args.stackId);
+    if (!stack) throw new Error("Stack not found");
+    await assertCanActAs(ctx, stack.userId);
     const patch: { cardTheme?: string; showWatermark?: boolean } = {};
     if (args.cardTheme !== undefined) patch.cardTheme = args.cardTheme;
     if (args.showWatermark !== undefined) patch.showWatermark = args.showWatermark;
@@ -324,6 +339,9 @@ export const updateStackIdentity = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const stack = await ctx.db.get(args.stackId);
+    if (!stack) throw new Error("Stack not found");
+    await assertCanActAs(ctx, stack.userId);
     const patch: {
       authorName?: string;
       authorHandle?: string;
@@ -355,6 +373,9 @@ export const updateStackDetails = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const stack = await ctx.db.get(args.stackId);
+    if (!stack) throw new Error("Stack not found");
+    await assertCanActAs(ctx, stack.userId);
     const patch: { name?: string; subtitle?: string } = {};
     if (args.title !== undefined) {
       patch.name = args.title.trim() || "My Tech Stack";
@@ -379,6 +400,7 @@ export const addToolToSection = mutation({
   },
   returns: v.id("selectedTools"),
   handler: async (ctx, args) => {
+    await assertSectionOwner(ctx, args.sectionId);
     return await ctx.db.insert("selectedTools", {
       sectionId: args.sectionId,
       toolId: args.toolId,
@@ -395,6 +417,9 @@ export const removeToolFromSection = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const selected = await ctx.db.get(args.selectedToolId);
+    if (!selected) return null;
+    await assertSectionOwner(ctx, selected.sectionId);
     await ctx.db.delete(args.selectedToolId);
     return null;
   },
@@ -410,6 +435,7 @@ export const togglePinnedTool = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await assertSectionOwner(ctx, args.sectionId);
     // Check if tool is already pinned
     const existing = await ctx.db
       .query("pinnedTools")
@@ -448,6 +474,7 @@ export const updateSectionTools = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await assertSectionOwner(ctx, args.sectionId);
     const existingTools = await ctx.db
       .query("selectedTools")
       .withIndex("by_sectionId", (q) => q.eq("sectionId", args.sectionId))
@@ -511,6 +538,7 @@ export const reorderSectionTools = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    await assertSectionOwner(ctx, args.sectionId);
     const existing = await ctx.db
       .query("selectedTools")
       .withIndex("by_sectionId", (q) => q.eq("sectionId", args.sectionId))

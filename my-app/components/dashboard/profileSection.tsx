@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,10 +27,11 @@ export function convexErrorMessage(err: unknown, fallback: string): string {
 export default function ProfileSection() {
   const { user, isLoaded } = useUser();
   const ownerId = user?.id;
+  const { isAuthenticated } = useConvexAuth();
 
   const profile = useQuery(
     api.profiles.getMyProfile,
-    ownerId ? { ownerId } : "skip"
+    ownerId && isAuthenticated ? { ownerId } : "skip"
   );
   const upsertProfile = useMutation(api.profiles.upsertProfile);
 

@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { query, mutation } from "./_generated/server";
+import { assertCanActAs, canActAs } from "./authz";
 
 // ============================================
 // VALIDATORS / HELPERS
@@ -44,6 +45,7 @@ export const getMyProfile = query({
   args: { ownerId: v.string() },
   returns: v.union(v.object(profileFields), v.null()),
   handler: async (ctx, args) => {
+    if (!(await canActAs(ctx, args.ownerId))) return null;
     return await ctx.db
       .query("profiles")
       .withIndex("by_owner", (q) => q.eq("ownerId", args.ownerId))
@@ -83,6 +85,8 @@ export const getMyStacks = query({
     })
   ),
   handler: async (ctx, args) => {
+    // Never enumerate someone else's (possibly private) stacks.
+    if (!(await canActAs(ctx, args.ownerId))) return [];
     const stacks = await ctx.db
       .query("stacks")
       .withIndex("by_userId", (q) => q.eq("userId", args.ownerId))
@@ -166,6 +170,12 @@ export const upsertProfile = mutation({
   },
   returns: v.id("profiles"),
   handler: async (ctx, args) => {
+    // Profiles are a signed-in feature: the caller's JWT must match
+    // ownerId exactly (guest keys can't own a public profile).
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== args.ownerId) {
+      throw new Error("Not authorized");
+    }
     const handle = validateHandle(args.handle);
     const displayName = args.displayName.trim();
     if (!displayName) {
@@ -227,6 +237,7 @@ export const setStackVisibility = mutation({
     if (!stack) {
       throw new Error("Stack not found");
     }
+    await assertCanActAs(ctx, stack.userId);
     await ctx.db.patch(args.stackId, { isPublic: args.isPublic });
     return null;
   },

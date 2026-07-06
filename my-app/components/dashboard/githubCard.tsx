@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useUser } from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
@@ -20,10 +20,11 @@ import { convexErrorMessage } from "@/components/dashboard/profileSection";
 export default function GithubCard() {
   const { user } = useUser();
   const ownerId = user?.id;
+  const { isAuthenticated } = useConvexAuth();
 
   const profile = useQuery(
     api.profiles.getMyProfile,
-    ownerId ? { ownerId } : "skip"
+    ownerId && isAuthenticated ? { ownerId } : "skip"
   );
   const upsertProfile = useMutation(api.profiles.upsertProfile);
 

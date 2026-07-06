@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useQuery, useMutation } from "convex/react";
+import { useConvexAuth, useQuery, useMutation } from "convex/react";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
@@ -24,6 +24,9 @@ const GUEST_KEY = "superstack_guest_id";
 
 export default function StackEditor() {
   const { user, isLoaded } = useUser();
+  // Convex authenticates its socket after Clerk loads; acting as the
+  // signed-in user before the handshake would fail the ownership checks.
+  const { isAuthenticated } = useConvexAuth();
   const [stackId, setStackId] = useState<Id<"stacks"> | null>(null);
 
   const getOrCreateStack = useMutation(api.stacks.getOrCreateStack);
@@ -40,6 +43,7 @@ export default function StackEditor() {
 
   useEffect(() => {
     if (!isLoaded) return;
+    if (user && !isAuthenticated) return;
     let cancelled = false;
     (async () => {
       let ownerId: string;
@@ -64,7 +68,7 @@ export default function StackEditor() {
     return () => {
       cancelled = true;
     };
-  }, [isLoaded, user?.id, adoptGuestStack, getOrCreateStack, user]);
+  }, [isLoaded, isAuthenticated, user?.id, adoptGuestStack, getOrCreateStack, user]);
 
   const [title, setTitle] = useState("");
   useEffect(() => {

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
-import { useMutation, useQuery } from "convex/react";
+import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
@@ -25,10 +25,11 @@ const THEME_LABELS: Record<string, string> = {
 export default function MyCardsSection() {
   const { user, isLoaded } = useUser();
   const ownerId = user?.id;
+  const { isAuthenticated } = useConvexAuth();
 
   const stacks = useQuery(
     api.profiles.getMyStacks,
-    ownerId ? { ownerId } : "skip"
+    ownerId && isAuthenticated ? { ownerId } : "skip"
   );
 
   // Optimistic toggle: patch the local getMyStacks result immediately so the
