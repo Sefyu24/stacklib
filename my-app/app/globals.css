@@ -12,6 +12,17 @@
   }
 }
 
+/* Floating hero cards on the landing page */
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--rot, 0deg));
+  }
+  50% {
+    transform: translateY(-8px) rotate(var(--rot, 0deg));
+  }
+}
+
 :root {
   /* Superstack warm palette (Second Scent) */
   --background: #f6f1e8;
