@@ -32,13 +32,79 @@ export const metadata: Metadata = {
     "Build your tech stack, get a clean social card, and share it anywhere.",
 };
 
+// Warm Superstack theming for every Clerk component (SignIn, SignUp, UserButton).
+const clerkAppearance: React.ComponentProps<typeof ClerkProvider>["appearance"] =
+  {
+    variables: {
+      colorPrimary: "#EC5B13",
+      colorForeground: "#1C1712",
+      colorBackground: "#FFFDF8",
+      colorInput: "#FFFFFF",
+      colorInputForeground: "#1C1712",
+      colorBorder: "#E8DFCE",
+      colorMutedForeground: "#8A7B63",
+      borderRadius: "10px",
+      fontFamily: "var(--font-archivo), sans-serif",
+    },
+    elements: {
+      // Chunky ink-outlined card, same recipe as the app's containers.
+      cardBox: {
+        border: "1.5px solid #1C1712",
+        boxShadow: "0 4px 0 #1C1712",
+        backgroundColor: "#FFFDF8",
+      },
+      card: {
+        backgroundColor: "#FFFDF8",
+      },
+      // Match Button variant="brand": bold pressable CTA with a bottom shadow.
+      formButtonPrimary: {
+        backgroundColor: "#EC5B13",
+        border: "1px solid #EC5B13",
+        boxShadow: "0 2px 0 #C4470B",
+        fontWeight: 700,
+        textTransform: "none",
+        "&:hover": {
+          backgroundColor: "#D94F0C",
+          borderColor: "#D94F0C",
+        },
+        "&:active": {
+          transform: "translateY(1px)",
+          boxShadow: "0 1px 0 #C4470B",
+        },
+      },
+      socialButtonsBlockButton: {
+        border: "1.5px solid #E8DFCE",
+        "&:hover": {
+          borderColor: "#EC5B13",
+        },
+      },
+      headerTitle: {
+        fontWeight: 900,
+        letterSpacing: "-0.02em",
+      },
+      footerActionLink: {
+        color: "#EC5B13",
+        fontWeight: 700,
+        "&:hover": {
+          color: "#D94F0C",
+        },
+      },
+      // UserButton dropdown inherits the same chunky card treatment.
+      userButtonPopoverCard: {
+        border: "1.5px solid #1C1712",
+        boxShadow: "0 4px 0 #1C1712",
+        backgroundColor: "#FFFDF8",
+      },
+    },
+  };
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider appearance={clerkAppearance}>
       <html lang="en">
         <body
           className={`${archivo.variable} ${jetbrainsMono.variable} ${ebGaramond.variable} antialiased`}
