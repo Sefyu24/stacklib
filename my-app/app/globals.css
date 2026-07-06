@@ -12,14 +12,20 @@
   }
 }
 
-/* Floating hero cards on the landing page */
+/* Floating hero cards on the landing page — slow, clearly visible drift */
 @keyframes floaty {
   0%,
   100% {
     transform: translateY(0) rotate(var(--rot, 0deg));
   }
   50% {
-    transform: translateY(-8px) rotate(var(--rot, 0deg));
+    transform: translateY(-14px) rotate(var(--rot, 0deg));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [style*="floaty"] {
+    animation: none !important;
   }
 }
 
