@@ -21,6 +21,13 @@ export default function Navbar() {
           <Link href="/stack" className="hidden sm:block">
             <Button variant="ghost">My stack</Button>
           </Link>
+          <SignedIn>
+            <Link href="/dashboard">
+              <Button variant="ghost" size="sm" className="sm:h-9 sm:px-4">
+                Dashboard
+              </Button>
+            </Link>
+          </SignedIn>
           <SignedOut>
             <Link href="/login">
               <Button variant="ghost" size="sm" className="sm:h-9 sm:px-4">
