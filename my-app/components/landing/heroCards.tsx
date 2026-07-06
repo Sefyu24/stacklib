@@ -10,6 +10,10 @@ import {
 
 const si = (slug: string) => `https://cdn.simpleicons.org/${slug}`;
 
+/** All three hero cards share one footprint so the carousel feels uniform. */
+const CARD_W = 310;
+const CARD_H = 400;
+
 function Icon({ slug, size }: { slug: string; size: number }) {
   return (
     <span
@@ -31,13 +35,16 @@ function MiniChip({ slug, label }: { slug: string; label: string }) {
 
 function TerminalMini() {
   return (
-    <div className="w-[290px] overflow-hidden rounded-2xl border-[1.5px] border-foreground bg-[#16110B] shadow-[0_4px_0_var(--foreground)]">
+    <div
+      className="flex flex-col overflow-hidden rounded-2xl border-[1.5px] border-foreground bg-[#16110B] shadow-[0_4px_0_var(--foreground)]"
+      style={{ width: CARD_W, height: CARD_H }}
+    >
       <div className="flex items-center gap-1.5 border-b border-[#2C2418] px-3.5 py-2.5">
         <span className="size-2 rounded-full bg-[#E5533C]" />
         <span className="size-2 rounded-full bg-[#E5A93C]" />
         <span className="size-2 rounded-full bg-[#5BA35B]" />
       </div>
-      <div className="px-4 py-3.5 font-mono text-[10.5px] leading-[2]">
+      <div className="flex flex-1 flex-col justify-center px-5 font-mono text-[11px] leading-[2.3]">
         <div className="text-[#C9BCA2]">
           <span className="text-primary">~</span>{" "}
           <span className="text-[#5BA35B]">$</span> superstack show
@@ -57,6 +64,11 @@ function TerminalMini() {
           <span className="text-[#4A3F2E]"> › </span>
           <span className="text-[#F0E6D2]">Claude · v0</span>
         </div>
+        <div>
+          <span className="text-primary">deploy</span>
+          <span className="text-[#4A3F2E]"> › </span>
+          <span className="text-[#F0E6D2]">Vercel</span>
+        </div>
         <div className="text-[#5BA35B]">✓ 6 tools · 4 pinned</div>
         <div className="text-[#6B5D46]">
           superstack.app
@@ -67,37 +79,70 @@ function TerminalMini() {
   );
 }
 
+const BENTO_COLUMNS: { label: string; tools: [string, string][] }[] = [
+  {
+    label: "FRONTEND",
+    tools: [
+      ["svelte", "Svelte"],
+      ["vite", "Vite"],
+    ],
+  },
+  {
+    label: "BACKEND",
+    tools: [
+      ["supabase", "Supabase"],
+      ["vercel", "Vercel"],
+    ],
+  },
+  {
+    label: "AI",
+    tools: [
+      ["claude", "Claude"],
+      ["openai", "ChatGPT"],
+    ],
+  },
+];
+
 function BentoMini() {
   return (
-    <div className="w-[250px] rounded-2xl border-[1.5px] border-foreground bg-[#F3E8D6] p-4 shadow-[0_4px_0_var(--foreground)]">
+    <div
+      className="flex flex-col rounded-2xl border-[1.5px] border-foreground bg-[#F3E8D6] p-4 shadow-[0_4px_0_var(--foreground)]"
+      style={{ width: CARD_W, height: CARD_H }}
+    >
       <div className="mb-2 flex items-baseline justify-between">
-        <span className="font-mono text-[8px] font-bold tracking-[0.22em] text-primary">
+        <span className="font-mono text-[9px] font-bold tracking-[0.22em] text-primary">
           SUPERSTACK
         </span>
-        <span className="font-mono text-[8px] text-[#A0713C]">6 tools</span>
+        <span className="font-mono text-[9px] text-[#A0713C]">6 tools</span>
       </div>
-      <div className="mb-2.5 text-[15px] font-black tracking-[-0.02em]">
+      <div className="mb-3 text-[17px] font-black tracking-[-0.02em]">
         sara ships
       </div>
-      <div className="grid grid-cols-3 gap-1.5">
-        {[
-          ["svelte", "Svelte"],
-          ["supabase", "Supabase"],
-          ["vite", "Vite"],
-          ["figma", "Figma"],
-          ["vercel", "Vercel"],
-          ["claude", "Claude"],
-        ].map(([slug, label]) => (
+      {/* Sections as equal-height columns — same shape as the real bento card */}
+      <div className="grid flex-1 grid-cols-3 gap-2">
+        {BENTO_COLUMNS.map((col) => (
           <div
-            key={slug}
-            className="flex flex-col items-center gap-[5px] rounded-[9px] border border-[#E4D5BB] bg-card px-1 pb-2 pt-2.5"
+            key={col.label}
+            className="flex flex-col rounded-[10px] border border-[#E4D5BB] bg-card p-1.5"
           >
-            <Icon slug={slug} size={20} />
-            <span className="text-[8.5px] font-bold">{label}</span>
+            <div className="mb-1.5 text-center font-mono text-[7px] font-bold tracking-[0.16em] text-[#A0713C]">
+              {col.label}
+            </div>
+            <div className="flex flex-1 flex-col gap-1.5">
+              {col.tools.map(([slug, label]) => (
+                <div
+                  key={slug}
+                  className="flex flex-1 flex-col items-center justify-center gap-[5px] rounded-[8px] border border-[#EDE4D2] bg-[#FFF8F0] px-1 py-2"
+                >
+                  <Icon slug={slug} size={20} />
+                  <span className="text-[8.5px] font-bold">{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>
-      <div className="mt-[9px] text-center font-mono text-[7.5px] text-[#A0713C]">
+      <div className="mt-2.5 text-center font-mono text-[8px] text-[#A0713C]">
         superstack.app
       </div>
     </div>
@@ -106,8 +151,11 @@ function BentoMini() {
 
 function MinimalMini() {
   return (
-    <div className="w-[330px] max-w-full rounded-[18px] border-[1.5px] border-foreground bg-[#FBF7F0] p-[9px] shadow-[0_6px_0_var(--foreground),0_24px_48px_rgba(60,40,10,0.18)]">
-      <div className="rounded-[11px] border border-[#EDE4D2] bg-card px-5 pb-3 pt-[18px]">
+    <div
+      className="flex max-w-full flex-col rounded-[18px] border-[1.5px] border-foreground bg-[#FBF7F0] p-[9px] shadow-[0_4px_0_var(--foreground)]"
+      style={{ width: CARD_W, height: CARD_H }}
+    >
+      <div className="flex flex-1 flex-col rounded-[11px] border border-[#EDE4D2] bg-card px-5 pb-3 pt-[18px]">
         <div className="flex items-baseline justify-between">
           <span className="font-mono text-[9px] font-bold tracking-[0.24em] text-primary">
             SUPERSTACK
@@ -119,7 +167,7 @@ function MinimalMini() {
         <div className="mb-3 mt-[7px] text-xl font-black tracking-[-0.02em]">
           My Tech Stack
         </div>
-        <div className="flex flex-col gap-[9px]">
+        <div className="flex flex-1 flex-col justify-center gap-[11px]">
           <div>
             <div className="mb-1 font-mono text-[7.5px] font-bold tracking-[0.2em] text-[#B4A78E]">
               FRONTEND
@@ -163,110 +211,154 @@ function MinimalMini() {
 }
 
 const CARDS = [
-  { key: "minimal", label: "Minimal card", node: <MinimalMini />, rot: "-1deg" },
-  { key: "bento", label: "Bento card", node: <BentoMini />, rot: "3deg" },
-  { key: "terminal", label: "Terminal card", node: <TerminalMini />, rot: "-3deg" },
+  { key: "minimal", label: "Minimal card", node: <MinimalMini /> },
+  { key: "bento", label: "Bento card", node: <BentoMini /> },
+  { key: "terminal", label: "Terminal card", node: <TerminalMini /> },
 ];
 
 /**
- * Hero art. Desktop: the three cards floating in a loose composition.
- * Mobile: one card at a time with arrows, so the art survives small screens.
+ * Desktop slots for the circular shuffle. Everything lives in `transform`
+ * (relative to the container center) so slot changes glide instead of snap.
+ * Slot 0 = front card; 1 = upper right; 2 = upper left.
+ */
+const SLOTS = [
+  { x: 0, y: 55, rot: -1, scale: 1.04, z: 30, dim: 1 },
+  { x: 135, y: -105, rot: 5, scale: 0.9, z: 20, dim: 0.92 },
+  { x: -135, y: -105, rot: -6, scale: 0.9, z: 10, dim: 0.92 },
+];
+
+const FLOAT = [
+  "floaty 6s ease-in-out infinite",
+  "floaty 8s ease-in-out 0.8s infinite",
+  "floaty 7s ease-in-out 0.4s infinite",
+];
+
+const EASE = "cubic-bezier(0.34, 1.2, 0.4, 1)";
+
+// Room above/below the card so the float drift + chunky shadow never clip.
+const STAGE_H = CARD_H + 64;
+
+/**
+ * Hero art. Desktop: three cards in a floating composition; arrows rotate
+ * which card sits in front, moving all three around in a circle.
+ * Mobile: a calm sliding one-card carousel with the same arrows.
  */
 export default function HeroCards() {
+  // idx = which card currently occupies the front slot.
   const [idx, setIdx] = useState(0);
   const step = (d: number) =>
     setIdx((i) => (i + d + CARDS.length) % CARDS.length);
-  const current = CARDS[idx];
 
   return (
     <>
-      {/* Desktop composition */}
-      <div className="relative hidden h-[520px] lg:block">
-        <div
-          className="absolute -left-2.5 top-9"
-          style={
-            {
-              "--rot": "-6deg",
-              animation: "floaty 7s ease-in-out infinite",
-            } as React.CSSProperties
-          }
-        >
-          <TerminalMini />
+      {/* Desktop composition — circular shuffle */}
+      <div className="hidden flex-col items-center gap-5 lg:flex">
+        <div className="relative w-full" style={{ height: STAGE_H + 130 }}>
+          {CARDS.map((card, i) => {
+            const slot = SLOTS[(i - idx + CARDS.length) % CARDS.length];
+            return (
+              <div
+                key={card.key}
+                className="absolute left-1/2 top-1/2 transition-[transform,filter] duration-[850ms] will-change-transform"
+                style={{
+                  zIndex: slot.z,
+                  transitionTimingFunction: EASE,
+                  transform: `translate(calc(-50% + ${slot.x}px), calc(-50% + ${slot.y}px)) rotate(${slot.rot}deg) scale(${slot.scale})`,
+                  filter:
+                    slot.dim < 1 ? "brightness(0.97) saturate(0.94)" : "none",
+                }}
+              >
+                <div style={{ animation: FLOAT[i] }}>{card.node}</div>
+              </div>
+            );
+          })}
         </div>
-        <div
-          className="absolute -right-1.5 top-0"
-          style={
-            {
-              "--rot": "5deg",
-              animation: "floaty 8s ease-in-out 0.8s infinite",
-            } as React.CSSProperties
-          }
-        >
-          <BentoMini />
-        </div>
-        <div
-          className="absolute left-[70px] top-[150px]"
-          style={
-            {
-              "--rot": "-1deg",
-              animation: "floaty 6s ease-in-out 0.4s infinite",
-            } as React.CSSProperties
-          }
-        >
-          <MinimalMini />
-        </div>
+        <Controls idx={idx} step={step} setIdx={setIdx} />
       </div>
 
-      {/* Mobile carousel */}
-      <div className="flex flex-col items-center gap-4 lg:hidden">
-        <div className="flex min-h-[360px] w-full items-center justify-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            className="flex-none rounded-full"
-            onClick={() => step(-1)}
-            aria-label="Previous card style"
-          >
-            <HugeiconsIcon icon={ArrowLeft01Icon} className="size-4" />
-          </Button>
-          <div
-            key={current.key}
-            className="flex flex-1 justify-center"
-            style={
-              {
-                "--rot": current.rot,
-                animation: "floaty 6s ease-in-out infinite",
-              } as React.CSSProperties
-            }
-          >
-            {current.node}
+      {/* Mobile carousel — calm slide */}
+      <div className="flex flex-col items-center gap-3 lg:hidden">
+        <div className="flex w-full items-center gap-2">
+          <ArrowButton dir={-1} step={step} />
+          <div className="w-full overflow-hidden">
+            <div
+              className="flex items-center transition-transform duration-700 will-change-transform"
+              style={{
+                height: STAGE_H,
+                transitionTimingFunction: EASE,
+                transform: `translateX(-${idx * 100}%)`,
+              }}
+            >
+              {CARDS.map((card, i) => (
+                <div
+                  key={card.key}
+                  className="flex w-full flex-none justify-center px-1 transition-opacity duration-700"
+                  style={{ opacity: i === idx ? 1 : 0.35 }}
+                >
+                  <div style={{ animation: FLOAT[i] }}>{card.node}</div>
+                </div>
+              ))}
+            </div>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            className="flex-none rounded-full"
-            onClick={() => step(1)}
-            aria-label="Next card style"
-          >
-            <HugeiconsIcon icon={ArrowRight01Icon} className="size-4" />
-          </Button>
+          <ArrowButton dir={1} step={step} />
         </div>
-        <div className="flex items-center gap-2" role="tablist" aria-label="Card styles">
-          {CARDS.map((c, i) => (
-            <button
-              key={c.key}
-              type="button"
-              role="tab"
-              aria-selected={i === idx}
-              aria-label={c.label}
-              onClick={() => setIdx(i)}
-              className={`size-2 cursor-pointer rounded-full transition-colors ${
-                i === idx ? "bg-primary" : "bg-[#E0D5BE] hover:bg-[#C9BCA2]"
-              }`}
-            />
-          ))}
-        </div>
+        <Dots idx={idx} setIdx={setIdx} />
       </div>
     </>
+  );
+}
+
+function ArrowButton({ dir, step }: { dir: number; step: (d: number) => void }) {
+  return (
+    <Button
+      variant="outline"
+      size="icon"
+      className="flex-none rounded-full"
+      onClick={() => step(dir)}
+      aria-label={dir < 0 ? "Previous card style" : "Next card style"}
+    >
+      <HugeiconsIcon
+        icon={dir < 0 ? ArrowLeft01Icon : ArrowRight01Icon}
+        className="size-4"
+      />
+    </Button>
+  );
+}
+
+function Dots({ idx, setIdx }: { idx: number; setIdx: (i: number) => void }) {
+  return (
+    <div className="flex items-center gap-2" role="tablist" aria-label="Card styles">
+      {CARDS.map((c, i) => (
+        <button
+          key={c.key}
+          type="button"
+          role="tab"
+          aria-selected={i === idx}
+          aria-label={c.label}
+          onClick={() => setIdx(i)}
+          className={`size-2 cursor-pointer rounded-full transition-colors ${
+            i === idx ? "bg-primary" : "bg-[#E0D5BE] hover:bg-[#C9BCA2]"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function Controls({
+  idx,
+  step,
+  setIdx,
+}: {
+  idx: number;
+  step: (d: number) => void;
+  setIdx: (i: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-4">
+      <ArrowButton dir={-1} step={step} />
+      <Dots idx={idx} setIdx={setIdx} />
+      <ArrowButton dir={1} step={step} />
+    </div>
   );
 }
