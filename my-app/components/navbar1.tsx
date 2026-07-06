@@ -18,6 +18,9 @@ export default function Navbar() {
           <Wordmark size={19} />
         </Link>
         <nav className="flex items-center gap-1 sm:gap-2">
+          <Link href="/browse" className="hidden sm:block">
+            <Button variant="ghost">Browse</Button>
+          </Link>
           <Link href="/stack" className="hidden sm:block">
             <Button variant="ghost">My stack</Button>
           </Link>

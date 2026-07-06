@@ -9,6 +9,7 @@
  */
 
 import type * as authz from "../authz.js";
+import type * as discover from "../discover.js";
 import type * as logoActions from "../logoActions.js";
 import type * as profiles from "../profiles.js";
 import type * as seed from "../seed.js";
@@ -31,6 +32,7 @@ import type {
  */
 declare const fullApi: ApiFromModules<{
   authz: typeof authz;
+  discover: typeof discover;
   logoActions: typeof logoActions;
   profiles: typeof profiles;
   seed: typeof seed;

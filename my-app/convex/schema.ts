@@ -39,7 +39,10 @@ export default defineSchema({
     // Whether the stack appears on the owner's public profile.
     // Missing is treated as false (private).
     isPublic: v.optional(v.boolean()),
-  }).index("by_userId", ["userId"]),
+  })
+    .index("by_userId", ["userId"])
+    // Discovery feed: only rows with isPublic === true are ever read.
+    .index("by_public", ["isPublic"]),
 
   profiles: defineTable({
     // Clerk user id (profiles are only for signed-in users, never guests).

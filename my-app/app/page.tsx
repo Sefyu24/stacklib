@@ -77,12 +77,12 @@ export default function Home() {
           >
             Try it
           </a>
-          <a
-            href="#community"
+          <Link
+            href="/browse"
             className="rounded-full px-3 py-[7px] text-[13px] font-semibold text-[#6B5D46] hover:bg-secondary hover:text-foreground"
           >
             Browse stacks
-          </a>
+          </Link>
           <a
             href="#tools"
             className="rounded-full px-3 py-[7px] text-[13px] font-semibold text-[#6B5D46] hover:bg-secondary hover:text-foreground"
@@ -187,12 +187,12 @@ export default function Home() {
                 See what they ship with — then remix it into your own card.
               </p>
             </div>
-            <a
-              href="#community"
+            <Link
+              href="/browse"
               className="flex-none rounded-[11px] border border-input bg-card px-[22px] py-3 text-sm font-bold hover:bg-secondary"
             >
               Browse all stacks →
-            </a>
+            </Link>
           </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {[
