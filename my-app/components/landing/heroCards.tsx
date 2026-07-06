@@ -10,9 +10,12 @@ import {
 
 const si = (slug: string) => `https://cdn.simpleicons.org/${slug}`;
 
-/** All three hero cards share one footprint so the carousel feels uniform. */
-const CARD_W = 310;
-const CARD_H = 400;
+/**
+ * All three hero cards share one footprint so the carousel feels uniform.
+ * Landscape, like the real 1200x630 share cards.
+ */
+const CARD_W = 340;
+const CARD_H = 225;
 
 function Icon({ slug, size }: { slug: string; size: number }) {
   return (
@@ -26,8 +29,8 @@ function Icon({ slug, size }: { slug: string; size: number }) {
 
 function MiniChip({ slug, label }: { slug: string; label: string }) {
   return (
-    <span className="inline-flex items-center gap-[5px] rounded-md border border-[#F0DCC2] bg-[#FFF8F0] px-2 py-[3px] text-[10.5px] font-semibold">
-      <Icon slug={slug} size={12} />
+    <span className="inline-flex items-center gap-[4px] rounded-md border border-[#F0DCC2] bg-[#FFF8F0] px-1.5 py-[2px] text-[9.5px] font-semibold">
+      <Icon slug={slug} size={11} />
       {label}
     </span>
   );
@@ -39,12 +42,12 @@ function TerminalMini() {
       className="flex flex-col overflow-hidden rounded-2xl border-[1.5px] border-foreground bg-[#16110B] shadow-[0_4px_0_var(--foreground)]"
       style={{ width: CARD_W, height: CARD_H }}
     >
-      <div className="flex items-center gap-1.5 border-b border-[#2C2418] px-3.5 py-2.5">
+      <div className="flex items-center gap-1.5 border-b border-[#2C2418] px-3.5 py-2">
         <span className="size-2 rounded-full bg-[#E5533C]" />
         <span className="size-2 rounded-full bg-[#E5A93C]" />
         <span className="size-2 rounded-full bg-[#5BA35B]" />
       </div>
-      <div className="flex flex-1 flex-col justify-center px-5 font-mono text-[11px] leading-[2.3]">
+      <div className="flex flex-1 flex-col justify-center px-4 font-mono text-[10.5px] leading-[1.95]">
         <div className="text-[#C9BCA2]">
           <span className="text-primary">~</span>{" "}
           <span className="text-[#5BA35B]">$</span> superstack show
@@ -106,16 +109,16 @@ const BENTO_COLUMNS: { label: string; tools: [string, string][] }[] = [
 function BentoMini() {
   return (
     <div
-      className="flex flex-col rounded-2xl border-[1.5px] border-foreground bg-[#F3E8D6] p-4 shadow-[0_4px_0_var(--foreground)]"
+      className="flex flex-col rounded-2xl border-[1.5px] border-foreground bg-[#F3E8D6] p-3 shadow-[0_4px_0_var(--foreground)]"
       style={{ width: CARD_W, height: CARD_H }}
     >
-      <div className="mb-2 flex items-baseline justify-between">
-        <span className="font-mono text-[9px] font-bold tracking-[0.22em] text-primary">
+      <div className="mb-1 flex items-baseline justify-between">
+        <span className="font-mono text-[8.5px] font-bold tracking-[0.22em] text-primary">
           SUPERSTACK
         </span>
-        <span className="font-mono text-[9px] text-[#A0713C]">6 tools</span>
+        <span className="font-mono text-[8.5px] text-[#A0713C]">6 tools</span>
       </div>
-      <div className="mb-3 text-[17px] font-black tracking-[-0.02em]">
+      <div className="mb-2 text-[15px] font-black tracking-[-0.02em]">
         sara ships
       </div>
       {/* Sections as equal-height columns — same shape as the real bento card */}
@@ -125,24 +128,24 @@ function BentoMini() {
             key={col.label}
             className="flex flex-col rounded-[10px] border border-[#E4D5BB] bg-card p-1.5"
           >
-            <div className="mb-1.5 text-center font-mono text-[7px] font-bold tracking-[0.16em] text-[#A0713C]">
+            <div className="mb-1 text-center font-mono text-[7px] font-bold tracking-[0.16em] text-[#A0713C]">
               {col.label}
             </div>
-            <div className="flex flex-1 flex-col gap-1.5">
+            <div className="flex flex-1 flex-col gap-1">
               {col.tools.map(([slug, label]) => (
                 <div
                   key={slug}
-                  className="flex flex-1 flex-col items-center justify-center gap-[5px] rounded-[8px] border border-[#EDE4D2] bg-[#FFF8F0] px-1 py-2"
+                  className="flex flex-1 flex-col items-center justify-center gap-[4px] rounded-[8px] border border-[#EDE4D2] bg-[#FFF8F0] px-1 py-1"
                 >
-                  <Icon slug={slug} size={20} />
-                  <span className="text-[8.5px] font-bold">{label}</span>
+                  <Icon slug={slug} size={15} />
+                  <span className="text-[8px] font-bold">{label}</span>
                 </div>
               ))}
             </div>
           </div>
         ))}
       </div>
-      <div className="mt-2.5 text-center font-mono text-[8px] text-[#A0713C]">
+      <div className="mt-1.5 text-center font-mono text-[7.5px] text-[#A0713C]">
         superstack.app
       </div>
     </div>
@@ -155,21 +158,21 @@ function MinimalMini() {
       className="flex max-w-full flex-col rounded-[18px] border-[1.5px] border-foreground bg-[#FBF7F0] p-[9px] shadow-[0_4px_0_var(--foreground)]"
       style={{ width: CARD_W, height: CARD_H }}
     >
-      <div className="flex flex-1 flex-col rounded-[11px] border border-[#EDE4D2] bg-card px-5 pb-3 pt-[18px]">
+      <div className="flex flex-1 flex-col rounded-[11px] border border-[#EDE4D2] bg-card px-4 pb-2 pt-2.5">
         <div className="flex items-baseline justify-between">
-          <span className="font-mono text-[9px] font-bold tracking-[0.24em] text-primary">
+          <span className="font-mono text-[8.5px] font-bold tracking-[0.24em] text-primary">
             SUPERSTACK
           </span>
-          <span className="font-mono text-[9px] text-[#B4A78E]">
+          <span className="font-mono text-[8.5px] text-[#B4A78E]">
             7 tools · 5 pinned
           </span>
         </div>
-        <div className="mb-3 mt-[7px] text-xl font-black tracking-[-0.02em]">
+        <div className="mb-1.5 mt-1 text-[16px] font-black tracking-[-0.02em]">
           My Tech Stack
         </div>
-        <div className="flex flex-1 flex-col justify-center gap-[11px]">
+        <div className="flex flex-1 flex-col justify-center gap-[6px]">
           <div>
-            <div className="mb-1 font-mono text-[7.5px] font-bold tracking-[0.2em] text-[#B4A78E]">
+            <div className="mb-0.5 font-mono text-[7.5px] font-bold tracking-[0.2em] text-[#B4A78E]">
               FRONTEND
             </div>
             <div className="flex flex-wrap gap-[5px]">
@@ -179,7 +182,7 @@ function MinimalMini() {
             </div>
           </div>
           <div>
-            <div className="mb-1 font-mono text-[7.5px] font-bold tracking-[0.2em] text-[#B4A78E]">
+            <div className="mb-0.5 font-mono text-[7.5px] font-bold tracking-[0.2em] text-[#B4A78E]">
               BACKEND
             </div>
             <div className="flex flex-wrap gap-[5px]">
@@ -188,7 +191,7 @@ function MinimalMini() {
             </div>
           </div>
           <div>
-            <div className="mb-1 font-mono text-[7.5px] font-bold tracking-[0.2em] text-[#B4A78E]">
+            <div className="mb-0.5 font-mono text-[7.5px] font-bold tracking-[0.2em] text-[#B4A78E]">
               AI
             </div>
             <div className="flex flex-wrap gap-[5px]">
@@ -197,8 +200,8 @@ function MinimalMini() {
             </div>
           </div>
         </div>
-        <div className="mt-3 flex items-center justify-between border-t border-[#EDE4D2] pt-[9px]">
-          <span className="font-mono text-[8.5px] text-[#B4A78E]">
+        <div className="mt-1.5 flex items-center justify-between border-t border-[#EDE4D2] pt-1.5">
+          <span className="font-mono text-[8px] text-[#B4A78E]">
             superstack.app
           </span>
           <span className="flex size-[13px] items-center justify-center rounded bg-primary text-[7px] font-black text-primary-foreground">
