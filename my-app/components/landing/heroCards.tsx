@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -252,6 +252,25 @@ export default function HeroCards() {
   const step = (d: number) =>
     setIdx((i) => (i + d + CARDS.length) % CARDS.length);
 
+  // Mobile: shrink the fixed-size card art to whatever width is available,
+  // so nothing ever crops and neighboring slides can't bleed into view.
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  useLayoutEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const fit = () => {
+      const w = el.clientWidth;
+      // w === 0 means the mobile branch is display:none (desktop) — keep the
+      // last real scale instead of collapsing the cards to nothing.
+      if (w > 0) setScale(Math.min(1, w / (CARD_W + 16)));
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   return (
     <>
       {/* Desktop composition — circular shuffle */}
@@ -279,33 +298,31 @@ export default function HeroCards() {
         <Controls idx={idx} step={step} setIdx={setIdx} />
       </div>
 
-      {/* Mobile carousel — calm slide */}
-      <div className="flex flex-col items-center gap-3 lg:hidden">
-        <div className="flex w-full items-center gap-2">
-          <ArrowButton dir={-1} step={step} />
-          <div className="w-full overflow-hidden">
-            <div
-              className="flex items-center transition-transform duration-700 will-change-transform"
-              style={{
-                height: STAGE_H,
-                transitionTimingFunction: EASE,
-                transform: `translateX(-${idx * 100}%)`,
-              }}
-            >
-              {CARDS.map((card, i) => (
-                <div
-                  key={card.key}
-                  className="flex w-full flex-none justify-center px-1 transition-opacity duration-700"
-                  style={{ opacity: i === idx ? 1 : 0.35 }}
-                >
+      {/* Mobile carousel — calm slide; cards scale down to fit the viewport */}
+      <div className="flex w-full flex-col items-center gap-3 lg:hidden">
+        <div ref={stageRef} className="w-full overflow-hidden">
+          <div
+            className="flex items-center transition-transform duration-700 will-change-transform"
+            style={{
+              height: STAGE_H * scale,
+              transitionTimingFunction: EASE,
+              transform: `translateX(-${idx * 100}%)`,
+            }}
+          >
+            {CARDS.map((card, i) => (
+              <div
+                key={card.key}
+                className="flex w-full flex-none justify-center transition-opacity duration-700"
+                style={{ opacity: i === idx ? 1 : 0.35 }}
+              >
+                <div style={{ transform: `scale(${scale})` }}>
                   <div style={{ animation: FLOAT[i] }}>{card.node}</div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-          <ArrowButton dir={1} step={step} />
         </div>
-        <Dots idx={idx} setIdx={setIdx} />
+        <Controls idx={idx} step={step} setIdx={setIdx} />
       </div>
     </>
   );
