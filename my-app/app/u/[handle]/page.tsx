@@ -60,7 +60,7 @@ export default async function PublicProfilePage({
   const { profile, stacks } = data;
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-10 sm:px-8 sm:py-14">
+    <main className="mx-auto max-w-4xl px-4 py-10 sm:px-8">
       <div className="flex flex-col gap-10">
         {/* ============ IDENTITY ============ */}
         <header className="flex flex-col items-start gap-5 sm:flex-row sm:items-center sm:gap-7">

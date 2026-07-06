@@ -30,6 +30,11 @@
 }
 
 :root {
+  /* Height of the sticky app navbar (components/navbar1.tsx). The <header>
+     sizes itself from this token; anything that offsets itself under the
+     navbar (e.g. the dashboard sidebar) must consume it too — never
+     hardcode the px value. */
+  --navbar-h: 69px;
   /* Superstack warm palette (Second Scent) */
   --background: #f6f1e8;
   --foreground: #1c1712;

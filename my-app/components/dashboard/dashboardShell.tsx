@@ -41,11 +41,13 @@ export default function DashboardShell() {
   const [section, setSection] = useState<DashboardSection>("profile");
 
   return (
-    <SidebarProvider className="min-h-[calc(100svh-70px)]">
-      {/* Desktop sidebar — plain (non-floating) so it sits below the navbar */}
+    <SidebarProvider className="min-h-[calc(100svh-var(--navbar-h))]">
+      {/* Desktop sidebar — plain (non-floating) so it sits below the sticky
+          navbar. Offsets share the --navbar-h token set in app/globals.css
+          and consumed by components/navbar1.tsx — no hardcoded px. */}
       <Sidebar
         collapsible="none"
-        className="sticky top-[69px] hidden h-[calc(100svh-69px)] self-start border-r border-border md:flex"
+        className="sticky top-[var(--navbar-h)] hidden h-[calc(100svh-var(--navbar-h))] self-start border-r border-border md:flex"
       >
         <SidebarHeader className="px-4 pb-2 pt-5">
           <Link href="/" className="flex items-center gap-2">
