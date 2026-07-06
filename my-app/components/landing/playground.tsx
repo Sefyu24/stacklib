@@ -15,7 +15,7 @@ import {
   CATEGORY_ORDER,
   CatalogTool,
 } from "@/lib/catalog";
-import { Logomark } from "@/components/brand/logo";
+import { Logomark, Wordmark } from "@/components/brand/logo";
 
 const si = (slug: string) => `https://cdn.simpleicons.org/${slug}`;
 
@@ -209,9 +209,7 @@ export default function Playground() {
         <div className="rounded-[18px] border-[1.5px] border-foreground bg-[#FBF7F0] p-[9px] shadow-[0_4px_0_var(--foreground)]">
           <div className="rounded-[11px] border border-[#EDE4D2] bg-card px-[22px] pb-3.5 pt-5">
             <div className="flex items-baseline justify-between">
-              <span className="font-mono text-[9.5px] font-bold tracking-[0.24em] text-primary">
-                SUPERSTACK
-              </span>
+              <Wordmark size={13} color="#EC5B13" />
               <span className="font-mono text-[9.5px] text-[#B4A78E]">
                 {statLabel}
               </span>

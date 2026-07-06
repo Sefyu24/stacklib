@@ -2,7 +2,7 @@ import Link from "next/link";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import Playground from "@/components/landing/playground";
 import HeroCards from "@/components/landing/heroCards";
-import { Logomark } from "@/components/brand/logo";
+import { Logomark, Wordmark } from "@/components/brand/logo";
 
 // Design-exact inline glyphs (server-safe; the design ships these SVG paths)
 function DragDots() {
@@ -68,9 +68,7 @@ export default function Home() {
       <header className="fixed left-1/2 top-6 z-50 flex w-[min(92%,720px)] -translate-x-1/2 items-center justify-between gap-4 rounded-full border border-[#E4DAC6] bg-[#FFFDF8]/70 py-2.5 pl-[22px] pr-3 shadow-[0_8px_24px_rgba(60,40,10,0.08)] backdrop-blur-xl">
         <Link href="/" className="flex flex-none items-center gap-[9px]">
           <Logomark size={24} />
-          <span className="font-mono text-xs font-bold tracking-[0.2em]">
-            SUPERSTACK
-          </span>
+          <Wordmark size={18} />
         </Link>
         <nav className="hidden items-center gap-1 sm:flex">
           <a
@@ -509,9 +507,7 @@ export default function Home() {
             <div className="absolute left-1/2 top-1/2 w-[330px] -translate-x-1/2 -translate-y-1/2 rotate-[-3deg] rounded-[18px] border-[1.5px] border-foreground bg-[#FBF7F0] p-[9px] shadow-[0_6px_0_var(--foreground),0_22px_44px_rgba(60,40,10,0.2)]">
               <div className="rounded-[11px] border border-[#EDE4D2] bg-card px-5 pb-3 pt-[18px]">
                 <div className="flex items-baseline justify-between">
-                  <span className="font-mono text-[9px] font-bold tracking-[0.24em] text-primary">
-                    SUPERSTACK
-                  </span>
+                  <Wordmark size={12} color="#EC5B13" />
                   <span className="font-mono text-[9px] text-[#B4A78E]">
                     7 tools · 5 pinned
                   </span>
@@ -563,9 +559,7 @@ export default function Home() {
       <footer className="flex flex-wrap items-center justify-between gap-4 bg-foreground px-6 py-[26px] text-[#B4A78E] sm:px-10">
         <div className="flex items-center gap-[9px]">
           <Logomark size={20} ink="#F0E6D2" accent="#EC5B13" />
-          <span className="font-mono text-[11px] font-bold tracking-[0.2em] text-[#F0E6D2]">
-            SUPERSTACK
-          </span>
+          <Wordmark size={16} color="#F0E6D2" />
         </div>
         <div className="flex gap-[22px] text-[12.5px]">
           <a href="#playground" className="hover:text-[#F0E6D2]">

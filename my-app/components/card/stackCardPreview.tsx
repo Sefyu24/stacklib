@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import LogoFramework from "@/app/stack/logo-framework";
-import { Logomark } from "@/components/brand/logo";
+import { Logomark, Wordmark } from "@/components/brand/logo";
 import {
   getCardSections,
   getCardStats,
@@ -292,9 +292,7 @@ function CardMinimal({
     <div className="rounded-[18px] border-[1.5px] border-foreground bg-[#FBF7F0] p-2.5 shadow-[0_4px_0_var(--foreground)]">
       <div className="rounded-xl border border-[#EDE4D2] bg-card px-6 pb-4 pt-[22px]">
         <div className="flex items-baseline justify-between gap-3">
-          <span className="font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
-            SUPERSTACK
-          </span>
+          <Wordmark size={13} color="#EC5B13" />
           <span className="font-mono text-[10px] text-[#B4A78E]">
             {statLabel}
           </span>
@@ -377,9 +375,7 @@ function CardBento({
   return (
     <div className="rounded-[18px] border-[1.5px] border-foreground bg-[#F3E8D6] px-[22px] pb-4 pt-[22px] shadow-[0_4px_0_var(--foreground)]">
       <div className="mb-1 flex items-baseline justify-between gap-3">
-        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.24em] text-primary">
-          SUPERSTACK
-        </span>
+        <Wordmark size={13} color="#EC5B13" />
         <span className="font-mono text-[10px] text-[#A0713C]">
           {statLabel}
         </span>

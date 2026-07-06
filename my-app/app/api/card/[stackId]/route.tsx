@@ -26,7 +26,7 @@ type OgFont = {
   name: string;
   data: ArrayBuffer;
   weight: 400 | 500 | 600 | 700 | 900;
-  style: "normal";
+  style: "normal" | "italic";
 };
 
 let fontsPromise: Promise<OgFont[]> | null = null;
@@ -37,7 +37,8 @@ function loadFonts(): Promise<OgFont[]> {
     const read = async (
       file: string,
       name: string,
-      weight: OgFont["weight"]
+      weight: OgFont["weight"],
+      style: OgFont["style"] = "normal"
     ): Promise<OgFont> => {
       const buf = await readFile(path.join(dir, file));
       return {
@@ -47,7 +48,7 @@ function loadFonts(): Promise<OgFont[]> {
           buf.byteOffset + buf.byteLength
         ) as ArrayBuffer,
         weight,
-        style: "normal",
+        style,
       };
     };
     return Promise.all([
@@ -57,6 +58,7 @@ function loadFonts(): Promise<OgFont[]> {
       read("Archivo-900.ttf", "Archivo", 900),
       read("JetBrainsMono-400.ttf", "JetBrains Mono", 400),
       read("JetBrainsMono-700.ttf", "JetBrains Mono", 700),
+      read("EBGaramond-Italic-600.ttf", "EB Garamond", 600, "italic"),
     ]);
   })();
   return fontsPromise;
@@ -390,14 +392,32 @@ function Wordmark({ color = ORANGE }: { color?: string }) {
     <div
       style={{
         display: "flex",
-        fontFamily: "JetBrains Mono",
-        fontSize: 21,
-        fontWeight: 700,
-        letterSpacing: 6,
+        alignItems: "baseline",
         color,
       }}
     >
-      SUPERSTACK
+      <div
+        style={{
+          display: "flex",
+          fontFamily: "EB Garamond",
+          fontStyle: "italic",
+          fontWeight: 600,
+          fontSize: 28,
+        }}
+      >
+        super
+      </div>
+      <div
+        style={{
+          display: "flex",
+          fontFamily: "Archivo",
+          fontWeight: 900,
+          fontSize: 26,
+          letterSpacing: -0.5,
+        }}
+      >
+        stack
+      </div>
     </div>
   );
 }

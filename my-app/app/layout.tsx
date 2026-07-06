@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Archivo, JetBrains_Mono } from "next/font/google";
+import { Archivo, EB_Garamond, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ConvexClientProvider } from "./ConvexClientProvider";
@@ -18,6 +18,14 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["400", "500", "600", "700"],
 });
 
+// Wordmark serif — the "super" in superstack (brand lockup pairing).
+const ebGaramond = EB_Garamond({
+  variable: "--font-garamond",
+  subsets: ["latin"],
+  style: ["italic"],
+  weight: ["600"],
+});
+
 export const metadata: Metadata = {
   title: "Superstack — Share your tech stack",
   description:
@@ -33,7 +41,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body
-          className={`${archivo.variable} ${jetbrainsMono.variable} antialiased`}
+          className={`${archivo.variable} ${jetbrainsMono.variable} ${ebGaramond.variable} antialiased`}
         >
           <Navbar />
           <ConvexClientProvider>{children}</ConvexClientProvider>

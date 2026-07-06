@@ -7,7 +7,7 @@ import {
   ArrowLeft01Icon,
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
-import { Logomark } from "@/components/brand/logo";
+import { Logomark, Wordmark } from "@/components/brand/logo";
 
 const si = (slug: string) => `https://cdn.simpleicons.org/${slug}`;
 
@@ -114,9 +114,7 @@ function BentoMini() {
       style={{ width: CARD_W, height: CARD_H }}
     >
       <div className="mb-1 flex items-baseline justify-between">
-        <span className="font-mono text-[8.5px] font-bold tracking-[0.22em] text-primary">
-          SUPERSTACK
-        </span>
+        <Wordmark size={12} color="#EC5B13" />
         <span className="font-mono text-[8.5px] text-[#A0713C]">6 tools</span>
       </div>
       <div className="mb-2 text-[15px] font-black tracking-[-0.02em]">
@@ -161,9 +159,7 @@ function MinimalMini() {
     >
       <div className="flex flex-1 flex-col rounded-[11px] border border-[#EDE4D2] bg-card px-4 pb-2 pt-2.5">
         <div className="flex items-baseline justify-between">
-          <span className="font-mono text-[8.5px] font-bold tracking-[0.24em] text-primary">
-            SUPERSTACK
-          </span>
+          <Wordmark size={12} color="#EC5B13" />
           <span className="font-mono text-[8.5px] text-[#B4A78E]">
             7 tools · 5 pinned
           </span>
