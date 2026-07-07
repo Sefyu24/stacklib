@@ -47,6 +47,8 @@ export default defineSchema({
     stickerPositions: v.optional(
       v.record(v.string(), v.object({ x: v.number(), y: v.number() }))
     ),
+    // Per-sticker display mode on the lid: "logo" | "both" | "name".
+    stickerModes: v.optional(v.record(v.string(), v.string())),
   })
     .index("by_userId", ["userId"])
     // Discovery feed: only rows with isPublic === true are ever read.

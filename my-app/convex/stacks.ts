@@ -27,6 +27,7 @@ export const getStack = query({
     stickerPositions: v.optional(
       v.record(v.string(), v.object({ x: v.number(), y: v.number() }))
     ),
+    stickerModes: v.optional(v.record(v.string(), v.string())),
     authorName: v.optional(v.string()),
     authorHandle: v.optional(v.string()),
     authorAvatarUrl: v.optional(v.string()),
@@ -352,6 +353,27 @@ export const setLidOptions = mutation({
     if (args.lidEdition !== undefined) patch.lidEdition = args.lidEdition;
     if (args.stickerSeed !== undefined) patch.stickerSeed = args.stickerSeed;
     if (Object.keys(patch).length > 0) await ctx.db.patch(args.stackId, patch);
+    return null;
+  },
+});
+
+export const setStickerMode = mutation({
+  args: {
+    stackId: v.id("stacks"),
+    toolId: v.string(),
+    mode: v.union(v.literal("logo"), v.literal("both"), v.literal("name")),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const stack = await ctx.db.get(args.stackId);
+    if (!stack) throw new Error("Stack not found");
+    await assertCanActAs(ctx, stack.userId);
+    await ctx.db.patch(args.stackId, {
+      stickerModes: {
+        ...(stack.stickerModes ?? {}),
+        [args.toolId]: args.mode,
+      },
+    });
     return null;
   },
 });

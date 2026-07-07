@@ -30,9 +30,11 @@ const CARD_W = 344;
 const CARD_H = Math.round((CARD_W * CARD_HEIGHT) / CARD_WIDTH); // true 1.9:1
 
 // Sample stack (maker.mia — 11 tools, 4 sections) driving all three themes.
+// Logos are SELF-HOSTED (public/hero-icons) — the hero renders ~30 logos at
+// once, which overwhelmed cdn.simpleicons.org and left broken boxes in prod.
 const T = (name: string, iconSlug: string) => ({
   toolId: iconSlug,
-  tool: { name, url: "", iconSlug },
+  tool: { name, url: "", logoUrl: `/hero-icons/${iconSlug}.svg`, iconSlug },
 });
 const section = (
   name: string,
@@ -63,17 +65,27 @@ const SAMPLE_SECTIONS: DisplaySectionInput[] = [
   ]),
 ];
 
+// The lid scatters every tool as a sticker, so 11 crowds/overlaps at hero
+// size — a leaner 8-tool set spreads cleanly across the lid.
+const LID_SECTIONS: DisplaySectionInput[] = [
+  section("Frontend", "frontend", [T("React", "react"), T("Tailwind", "tailwindcss")]),
+  section("Backend", "backend", [T("Convex", "convex"), T("Node.js", "nodedotjs")]),
+  section("AI", "ai", [T("Claude", "claude"), T("v0", "v0")]),
+  section("Other", "other", [T("Figma", "figma"), T("Vercel", "vercel")]),
+];
+
 const sampleStack = (
   cardTheme: string,
-  lidEdition?: string
+  lidEdition?: string,
+  sections: DisplaySectionInput[] = SAMPLE_SECTIONS
 ): CardStackInput => ({
   name: "maker.mia",
-  sections: SAMPLE_SECTIONS,
+  sections,
   cardTheme,
   authorName: "maker.mia",
   authorHandle: "maker.mia",
   lidEdition,
-  stickerSeed: 3,
+  stickerSeed: 5,
 });
 
 const resolveLogo = (t: {
@@ -96,7 +108,10 @@ const CARDS: { key: string; label: string; data: CardRenderData }[] = [
   {
     key: "lid",
     label: "Lid card",
-    data: buildCardRenderData(sampleStack("lid", "apple"), resolveLogo),
+    data: buildCardRenderData(
+      sampleStack("lid", "apple", LID_SECTIONS),
+      resolveLogo
+    ),
   },
 ];
 

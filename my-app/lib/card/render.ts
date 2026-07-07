@@ -96,6 +96,7 @@ export interface CardRenderData {
   stickerSeed: number;
   /** User-dragged sticker positions (normalized 0..1), keyed by toolId */
   stickerPositions: Record<string, { x: number; y: number }>;
+  stickerModes: Record<string, string>;
   /** Pre-resolved center OS mark (data URI on the OG path); null = use LID_MARK_URL */
   lidMarkSrc: string | null;
   sections: CardRenderSection[];
@@ -114,6 +115,7 @@ export interface CardStackInput {
   lidEdition?: string | null;
   stickerSeed?: number | null;
   stickerPositions?: Record<string, { x: number; y: number }> | null;
+  stickerModes?: Record<string, string> | null;
 }
 
 export type LogoResolver = (tool: DisplayTool) => string | null;
@@ -151,6 +153,7 @@ export function buildCardRenderData(
     lidEdition: getLidEdition(stack.lidEdition),
     stickerSeed: stack.stickerSeed ?? 1,
     stickerPositions: stack.stickerPositions ?? {},
+    stickerModes: stack.stickerModes ?? {},
     lidMarkSrc,
     sections: display.map((s) => ({
       name: s.name,
@@ -263,6 +266,8 @@ export interface LidSticker {
   /** Letter fallback when logoSrc is null */
   letter: string;
   shape: LidStickerShape;
+  /** Display mode: logo only, logo+name, or name only (double-click cycles) */
+  mode: "logo" | "both" | "name";
   /** Size in 1x px on the 1200x630 lid */
   w: number;
   h: number;
@@ -307,28 +312,51 @@ export function getIdentityLayout(data: CardRenderData): LidIdentityLayout {
 }
 
 // Per-tool look: consumed rng calls are in a fixed order so the result is a
-// stable function of (seed, toolId).
+// stable function of (seed, toolId). `modeOverride` (a user choice via
+// double-click, not seeded) picks what the sticker shows; rotation is drawn
+// before the mode branch so it stays stable when the mode changes.
 function stickerLook(
   rng: () => number,
-  name: string
-): { shape: LidStickerShape; w: number; h: number; rotation: number } {
+  name: string,
+  modeOverride: string | undefined
+): {
+  shape: LidStickerShape;
+  mode: "logo" | "both" | "name";
+  w: number;
+  h: number;
+  rotation: number;
+} {
   const rPill = rng();
   const rShape = rng();
   const rSize = rng();
   const rRot = rng();
   const rotation = Math.round((rRot * 16 - 8) * 10) / 10;
 
-  if (name.length <= 9 && rPill < 0.4) {
-    // Pill: icon + uppercase name.
+  // Default preserves the original look: short names get a name+logo pill,
+  // everything else is a logo-only circle/square.
+  const defaultMode: "logo" | "both" =
+    name.length <= 9 && rPill < 0.4 ? "both" : "logo";
+  const mode: "logo" | "both" | "name" =
+    modeOverride === "logo" ||
+    modeOverride === "both" ||
+    modeOverride === "name"
+      ? modeOverride
+      : defaultMode;
+
+  if (mode === "name") {
+    const w = Math.round(name.length * 17 + 52);
+    return { shape: "pill", mode, w, h: 72, rotation };
+  }
+  if (mode === "both") {
     const w = Math.round(44 + 14 + name.length * 16.5 + 48);
-    return { shape: "pill", w, h: 88, rotation };
+    return { shape: "pill", mode, w, h: 88, rotation };
   }
   if (rShape < 0.55) {
     const d = Math.round(132 + rSize * 44); // 132–176
-    return { shape: "circle", w: d, h: d, rotation };
+    return { shape: "circle", mode, w: d, h: d, rotation };
   }
   const s = Math.round(122 + rSize * 40); // 122–162
-  return { shape: "square", w: s, h: s, rotation };
+  return { shape: "square", mode, w: s, h: s, rotation };
 }
 
 /**
@@ -354,7 +382,8 @@ export function getStickerLayout(data: CardRenderData): LidSticker[] {
   const items: Item[] = shown.map((t) => {
     const look = stickerLook(
       mulberry32((seed ^ hashString(t.toolId)) >>> 0),
-      t.name
+      t.name,
+      data.stickerModes[t.toolId]
     );
     return {
       toolId: t.toolId,
@@ -380,6 +409,7 @@ export function getStickerLayout(data: CardRenderData): LidSticker[] {
       logoSrc: null,
       letter: "+",
       shape: "pill",
+      mode: "name",
       w,
       h: 66,
       rotation: Math.round((rng() * 16 - 8) * 10) / 10,
