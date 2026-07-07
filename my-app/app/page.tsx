@@ -558,7 +558,7 @@ export default function Home() {
       {/* ===== FOOTER ===== */}
       <footer className="flex flex-wrap items-center justify-between gap-4 bg-foreground px-6 py-[26px] text-[#B4A78E] sm:px-10">
         <div className="flex items-center gap-[9px]">
-          <Logomark size={20} ink="#F0E6D2" accent="#EC5B13" />
+          <Logomark size={20} />
           <Wordmark size={16} color="#F0E6D2" />
         </div>
         <div className="flex gap-[22px] text-[12.5px]">
