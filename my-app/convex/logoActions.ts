@@ -111,6 +111,31 @@ async function resolveAndStore(
   return null;
 }
 
+/**
+ * Admin override: set a tool's logo from an explicit image URL (downloaded
+ * and stored durably). For when Brandfetch serves the wrong mark — e.g.
+ * nodejs.org's brand entry returns a Pride-variant hexagon.
+ * Run with: npx convex run [--prod] logoActions:setToolLogoFromUrl '{"toolId":"...","url":"https://..."}'
+ */
+export const setToolLogoFromUrl = internalAction({
+  args: { toolId: v.id("tools"), url: v.string() },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const png = await downloadPng(args.url);
+    if (!png) throw new Error("URL did not return a valid PNG");
+    const storageId = await ctx.storage.store(
+      new Blob([png], { type: "image/png" })
+    );
+    const url = await ctx.storage.getUrl(storageId);
+    if (!url) throw new Error("Storage URL unavailable");
+    await ctx.runMutation(internal.tools.patchToolLogo, {
+      toolId: args.toolId,
+      logoUrl: url,
+    });
+    return null;
+  },
+});
+
 /** Capture a durable logo for one tool (scheduled from getOrCreateTool). */
 export const enrichToolLogo = internalAction({
   args: { toolId: v.id("tools") },

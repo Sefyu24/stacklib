@@ -32,7 +32,9 @@ const RAW: Record<CatalogCategory, [string, string, string][]> = {
     ["Vite", "vite", "vitejs.dev"],
   ],
   backend: [
-    ["Node.js", "nodedotjs", "nodejs.org"],
+    // Brandfetch's nodejs.org entry serves a Pride-variant icon; the iojs.org
+    // entry (same brand, post-merger domain) carries the classic green hexagon.
+    ["Node.js", "nodedotjs", "iojs.org"],
     ["Convex", "convex", "convex.dev"],
     ["Supabase", "supabase", "supabase.com"],
     ["Firebase", "firebase", "firebase.google.com"],
