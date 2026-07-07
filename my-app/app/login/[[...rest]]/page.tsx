@@ -1,9 +1,19 @@
 import { SignIn } from "@clerk/nextjs";
+import { AuthShell } from "@/components/auth/authShell";
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-[calc(100svh-60px)] items-center justify-center bg-background p-8 text-foreground">
+    <AuthShell
+      headline="Welcome back."
+      subtitle="Your stacks missed you — sign in and pick up where you left off."
+      footer={
+        <>
+          superstack.app/<span className="text-primary">you</span> — still
+          yours
+        </>
+      }
+    >
       <SignIn path="/login" signUpUrl="/signup" />
-    </div>
+    </AuthShell>
   );
 }
