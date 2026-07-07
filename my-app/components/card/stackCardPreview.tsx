@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useMutation } from "convex/react";
+import { SignInButton, useUser } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { FunctionReturnType } from "convex/server";
 import { Id } from "@/convex/_generated/dataModel";
@@ -11,8 +12,19 @@ import {
   ToggleGroupItem,
 } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { NewTwitterIcon, ShuffleIcon } from "@hugeicons/core-free-icons";
+import {
+  GithubIcon,
+  NewTwitterIcon,
+  ShuffleIcon,
+} from "@hugeicons/core-free-icons";
 import { DisplaySectionInput } from "@/lib/card/display";
 import {
   buildCardRenderData,
@@ -48,6 +60,12 @@ export default function StackCardPreview({
   stackId: Id<"stacks">;
   onSetTheme: (theme: CardThemeKey) => void;
 }) {
+  // Guests can preview, copy the link, and share on X freely, but the PNG
+  // download is gated behind sign-in to drive onboarding. Read auth state
+  // internally so the call site needs no new props.
+  const { isSignedIn } = useUser();
+  const [gateOpen, setGateOpen] = useState(false);
+
   // Server-synced local state, adjusted during render (not in an effect):
   // when another session changes the stack, the new server value wins; local
   // interaction updates render instantly and the mutation catches up.
@@ -283,6 +301,17 @@ export default function StackCardPreview({
     }
   };
 
+  // Guests get the sign-in gate instead of a download; signed-in users
+  // download exactly as before. (isSignedIn is undefined until Clerk loads —
+  // only gate once we know for sure the user is signed out.)
+  const handleDownloadClick = () => {
+    if (isSignedIn === false) {
+      setGateOpen(true);
+      return;
+    }
+    downloadPng();
+  };
+
   return (
     <div className="flex flex-col gap-3.5 lg:sticky lg:top-24">
       <div className="flex items-center justify-between gap-3">
@@ -380,11 +409,39 @@ export default function StackCardPreview({
           <Button variant="outline" className="flex-1" onClick={copyLink}>
             Copy link
           </Button>
-          <Button variant="outline" className="flex-1" onClick={downloadPng}>
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={handleDownloadClick}
+          >
             Download PNG
           </Button>
         </div>
       </div>
+
+      {/* Guest download gate — frames signing in as the way to save & share
+          your card, and starts GitHub sign-in in a Clerk modal so the user
+          isn't navigated away. After signing in they can click Download
+          again and the PNG saves. */}
+      <Dialog open={gateOpen} onOpenChange={setGateOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="text-[19px] font-black tracking-[-0.02em]">
+              Save &amp; share your card
+            </DialogTitle>
+            <DialogDescription className="text-[13.5px] leading-relaxed text-[#6B5D46]">
+              Sign in with GitHub to download your card as a PNG. Copying the
+              link and sharing on X stay free for everyone.
+            </DialogDescription>
+          </DialogHeader>
+          <SignInButton mode="modal" forceRedirectUrl="/stack">
+            <Button variant="brand" className="w-full gap-2">
+              <HugeiconsIcon icon={GithubIcon} className="size-4" />
+              Continue with GitHub
+            </Button>
+          </SignInButton>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
