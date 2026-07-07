@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
+import StackPile from "@/components/browse/stackPile";
 
 export const metadata: Metadata = {
   title: "Browse stacks — Superstack",
@@ -16,7 +17,17 @@ export const revalidate = 60;
 async function getFeed() {
   const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
   try {
-    return await convex.query(api.discover.listPublicStacks, { limit: 36 });
+    const stacks = await convex.query(api.discover.listPublicStacks, {
+      limit: 36,
+    });
+    // The deployed query can lag this code (functions are pushed
+    // separately) — default the pile fields so the page never crashes on
+    // the old shape.
+    return stacks.map((stack) => ({
+      ...stack,
+      toolCount: stack.toolCount ?? 0,
+      sections: stack.sections ?? [],
+    }));
   } catch {
     return [];
   }
@@ -56,51 +67,11 @@ export default async function BrowsePage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          // Piles rotate slightly when closed — the grid must never clip
+          // them, so items keep overflow visible and generous gaps.
+          <div className="grid grid-cols-1 items-start gap-7 overflow-visible md:grid-cols-2 xl:grid-cols-3">
             {stacks.map((stack) => (
-              <div
-                key={stack.id}
-                className="group flex flex-col gap-2.5 rounded-2xl border border-border bg-card p-3.5 transition-colors hover:border-primary"
-              >
-                <Link href={`/s/${stack.id}`} className="block overflow-hidden rounded-xl border border-[#EDE4D2]">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={`/api/card/${stack.id}`}
-                    alt={`${stack.name} card`}
-                    width={600}
-                    height={315}
-                    loading="lazy"
-                    className="aspect-[1200/630] w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                  />
-                </Link>
-                <div className="flex items-baseline justify-between gap-3 px-1 pb-1">
-                  <div className="min-w-0">
-                    <Link
-                      href={`/s/${stack.id}`}
-                      className="block truncate text-[15px] font-extrabold text-foreground hover:text-primary"
-                    >
-                      {stack.name}
-                    </Link>
-                    {stack.subtitle && (
-                      <p className="truncate text-[12.5px] text-[#8A7B63]">
-                        {stack.subtitle}
-                      </p>
-                    )}
-                  </div>
-                  {stack.handle ? (
-                    <Link
-                      href={`/u/${stack.handle}`}
-                      className="flex-none font-mono text-[11px] text-[#B4A78E] hover:text-primary"
-                    >
-                      @{stack.handle}
-                    </Link>
-                  ) : stack.authorName ? (
-                    <span className="flex-none font-mono text-[11px] text-[#B4A78E]">
-                      {stack.authorName}
-                    </span>
-                  ) : null}
-                </div>
-              </div>
+              <StackPile key={stack.id} stack={stack} />
             ))}
           </div>
         )}
