@@ -3,7 +3,8 @@ import Link from "next/link";
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { Button } from "@/components/ui/button";
-import StackPile from "@/components/browse/stackPile";
+import BrowseFeed from "@/components/browse/browseFeed";
+import type { StackPileStack } from "@/components/browse/stackPile";
 
 export const metadata: Metadata = {
   title: "Browse stacks — Superstacks",
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 // The feed changes as people publish; keep it fresh but cacheable.
 export const revalidate = 60;
 
-async function getFeed() {
+async function getFeed(): Promise<StackPileStack[]> {
   const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
   try {
     const stacks = await convex.query(api.discover.listPublicStacks, {
@@ -57,24 +58,8 @@ export default async function BrowsePage() {
           </Link>
         </div>
 
-        {stacks.length === 0 ? (
-          <div className="flex flex-col items-start gap-3 rounded-2xl border-[1.5px] border-dashed border-[#E0D5BE] px-6 py-10">
-            <p className="text-[15px] text-[#8A7B63]">
-              No public stacks yet — yours could be the first one here.
-            </p>
-            <p className="text-[13.5px] text-[#B4A78E]">
-              Build a card, then flip it to public from your dashboard.
-            </p>
-          </div>
-        ) : (
-          // Piles rotate slightly when closed — the grid must never clip
-          // them, so items keep overflow visible and generous gaps.
-          <div className="grid grid-cols-1 items-start gap-7 overflow-visible md:grid-cols-2 xl:grid-cols-3">
-            {stacks.map((stack) => (
-              <StackPile key={stack.id} stack={stack} />
-            ))}
-          </div>
-        )}
+        {/* Filter + grid live in a client component so filtering is live. */}
+        <BrowseFeed initialStacks={stacks} />
       </div>
     </main>
   );
