@@ -372,7 +372,14 @@ export default function StackCardPreview({
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
-          <SharePreviewDialog data={data} stackId={stackId} onShareOnX={shareOnX} />
+          <SharePreviewDialog
+            data={data}
+            stackId={stackId}
+            theme={theme}
+            edition={edition}
+            seed={seed}
+            onShareOnX={shareOnX}
+          />
         </div>
       </div>
 

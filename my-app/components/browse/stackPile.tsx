@@ -324,7 +324,7 @@ export default function StackPile({ stack }: { stack: StackPileStack }) {
       <div className="mt-3.5 flex items-center justify-between gap-3 border-t border-[#EDE4D2] pt-2.5">
         {stack.handle ? (
           <Link
-            href={`/u/${stack.handle}`}
+            href={`/${stack.handle}`}
             onClick={(e) => e.stopPropagation()}
             className="truncate font-mono text-[9px] text-[#B4A78E] hover:text-primary"
           >

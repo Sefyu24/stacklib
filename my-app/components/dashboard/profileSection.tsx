@@ -176,11 +176,11 @@ export default function ProfileSection() {
 
           {profile && (
             <Link
-              href={`/u/${profile.handle}`}
+              href={`/${profile.handle}`}
               className="flex items-center gap-1.5 font-mono text-[12px] font-semibold uppercase tracking-[0.18em] text-primary hover:underline"
             >
               <HugeiconsIcon icon={Link01Icon} className="size-3.5" />
-              /u/{profile.handle}
+              /{profile.handle}
             </Link>
           )}
         </div>

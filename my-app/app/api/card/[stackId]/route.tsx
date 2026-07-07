@@ -99,10 +99,21 @@ export async function GET(
 ) {
   const { stackId } = await params;
 
+  const sp = new URL(request.url).searchParams;
   // ?scale=2 renders the same vector tree at 2400x1260 for crisp downloads;
   // the default stays 1x for OG embeds. Anything else falls back to 1.
-  const scale =
-    new URL(request.url).searchParams.get("scale") === "2" ? 2 : 1;
+  const scale = sp.get("scale") === "2" ? 2 : 1;
+  // Optional live-preview overrides: the in-app "Share preview" dialog renders
+  // the card exactly as the user is previewing it right now (theme/edition/
+  // seed), which also busts the edge cache when they switch. X and OG embeds
+  // use the param-less URL, i.e. the stack's SAVED theme.
+  const themeOverride = sp.get("theme") ?? undefined;
+  const editionOverride = sp.get("edition") ?? undefined;
+  const seedParam = sp.get("seed");
+  const seedOverride =
+    seedParam && Number.isFinite(Number(seedParam))
+      ? Number(seedParam)
+      : undefined;
 
   const convex = new ConvexHttpClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
@@ -142,13 +153,13 @@ export async function GET(
       name: stack.name,
       subtitle: stack.subtitle,
       sections: displayInput,
-      cardTheme: stack.cardTheme,
+      cardTheme: themeOverride ?? stack.cardTheme,
       showWatermark: stack.showWatermark,
       showAvatar: stack.showAvatar,
       authorName: stack.authorName,
       authorHandle: stack.authorHandle,
-      lidEdition: stack.lidEdition,
-      stickerSeed: stack.stickerSeed,
+      lidEdition: editionOverride ?? stack.lidEdition,
+      stickerSeed: seedOverride ?? stack.stickerSeed,
       stickerPositions: stack.stickerPositions,
       stickerModes: stack.stickerModes,
     },

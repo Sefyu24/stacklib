@@ -33,6 +33,24 @@ function validateHandle(raw: string): string {
   return handle;
 }
 
+/**
+ * Turn any string (a GitHub username, a display name) into a valid handle
+ * base: lowercase, only [a-z0-9-], 3-20 chars. Pads short/empty inputs so the
+ * result always satisfies validateHandle's rules.
+ */
+function slugifyHandle(raw: string): string {
+  let s = raw
+    .trim()
+    .toLowerCase()
+    .replace(/@/g, "")
+    .replace(/[^a-z0-9-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (s.length < 3) s = `${s}${s ? "-" : ""}dev`.replace(/^-+/, "");
+  if (s.length < 3) s = "user";
+  return s.slice(0, 20).replace(/-+$/g, "") || "user";
+}
+
 // ============================================
 // QUERIES
 // ============================================
@@ -220,6 +238,63 @@ export const upsertProfile = mutation({
       bio: args.bio?.trim(),
       githubUsername: args.githubUsername?.trim(),
     });
+  },
+});
+
+/**
+ * Idempotent auto-provision: give a signed-in user a profile the moment they
+ * arrive, so superstacks.dev/<handle> works without anyone touching a form.
+ * Used for GitHub sign-ins (preferredHandle = their GitHub username). If the
+ * desired handle is taken it appends -2, -3, … Returns the resolved handle.
+ * No-op (returns the existing handle) when a profile already exists.
+ *
+ * Google/email sign-ins have no natural handle — the client shows a "claim
+ * your URL" step and calls upsertProfile with the chosen handle instead.
+ */
+export const ensureProfileAuto = mutation({
+  args: {
+    ownerId: v.string(),
+    displayName: v.string(),
+    preferredHandle: v.string(),
+    githubUsername: v.optional(v.string()),
+  },
+  returns: v.object({ handle: v.string(), created: v.boolean() }),
+  handler: async (ctx, args) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity || identity.subject !== args.ownerId) {
+      throw new Error("Not authorized");
+    }
+
+    const existing = await ctx.db
+      .query("profiles")
+      .withIndex("by_owner", (q) => q.eq("ownerId", args.ownerId))
+      .first();
+    if (existing) return { handle: existing.handle, created: false };
+
+    const base = slugifyHandle(args.preferredHandle);
+    let handle = base;
+    let n = 1;
+    // Resolve collisions deterministically: base, base-2, base-3, …
+    // (append within the 20-char cap).
+    while (
+      await ctx.db
+        .query("profiles")
+        .withIndex("by_handle", (q) => q.eq("handle", handle))
+        .first()
+    ) {
+      n += 1;
+      const suffix = `-${n}`;
+      handle = `${base.slice(0, 20 - suffix.length)}${suffix}`;
+    }
+
+    const displayName = args.displayName.trim() || handle;
+    await ctx.db.insert("profiles", {
+      ownerId: args.ownerId,
+      handle,
+      displayName,
+      githubUsername: args.githubUsername?.trim() || undefined,
+    });
+    return { handle, created: true };
   },
 });
 

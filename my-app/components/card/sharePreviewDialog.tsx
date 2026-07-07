@@ -23,15 +23,28 @@ import { Id } from "@/convex/_generated/dataModel";
 export default function SharePreviewDialog({
   data,
   stackId,
+  theme,
+  edition,
+  seed,
   onShareOnX,
 }: {
   data: CardRenderData;
   stackId: Id<"stacks">;
+  // The live preview's current theme/edition/seed, so the dialog renders the
+  // card the user is looking at right now (not the stale edge-cached PNG).
+  theme: string;
+  edition: string;
+  seed: number;
   onShareOnX: () => void;
 }) {
   const displayName = data.authorName || data.stackName;
   const handle = data.handleText ? `@${data.handleText}` : "@superstacks";
   const showAvatarImg = data.showAvatar !== false && data.avatarSrc;
+  // Forward the current preview state as query overrides; the changing values
+  // also bust the OG route's edge cache when the user switches theme/shuffles.
+  const cardSrc = `/api/card/${stackId}?scale=2&theme=${encodeURIComponent(
+    theme
+  )}&edition=${encodeURIComponent(edition)}&seed=${seed}`;
 
   return (
     <Dialog>
@@ -90,7 +103,7 @@ export default function SharePreviewDialog({
           <div className="mt-2.5 overflow-hidden rounded-[14px] border border-[#E8DFCE]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={`/api/card/${stackId}?scale=2`}
+              src={cardSrc}
               alt={`${data.stackName} card preview`}
               width={1200}
               height={630}

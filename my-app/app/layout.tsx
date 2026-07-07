@@ -5,6 +5,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { ConvexClientProvider } from "./ConvexClientProvider";
 import { Toaster } from "@/components/ui/sonner";
 import Navbar from "@/components/navbar1";
+import ProfileGate from "@/components/profile/profileGate";
 
 const archivo = Archivo({
   variable: "--font-archivo",
@@ -137,10 +138,13 @@ export default function RootLayout({
     <ClerkProvider appearance={clerkAppearance}>
       <html lang="en">
         <body
-          className={`${archivo.variable} ${jetbrainsMono.variable} ${ebGaramond.variable} antialiased`}
+          className={`${archivo.variable} ${jetbrainsMono.variable} ${ebGaramond.variable} bg-background antialiased`}
         >
           <Navbar />
-          <ConvexClientProvider>{children}</ConvexClientProvider>
+          <ConvexClientProvider>
+            <ProfileGate />
+            {children}
+          </ConvexClientProvider>
           <Toaster />
         </body>
       </html>
