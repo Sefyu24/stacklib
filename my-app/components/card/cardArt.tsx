@@ -120,7 +120,7 @@ export function CardArt({
 }) {
   const k = scale;
   const card =
-    data.theme === "bento" ? (
+    data.theme === "lid" ? (
       <BentoCard data={data} fonts={fonts} k={k} />
     ) : data.theme === "terminal" ? (
       <TerminalCard data={data} fonts={fonts} k={k} />

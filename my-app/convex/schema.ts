@@ -39,6 +39,14 @@ export default defineSchema({
     // Whether the stack appears on the owner's public profile.
     // Missing is treated as false (private).
     isPublic: v.optional(v.boolean()),
+    // Lid theme: which OS edition and where the user dragged each sticker.
+    // Positions are normalized (0..1) within the lid so every render size
+    // (preview, 1x PNG, 2x PNG) agrees. Missing = deterministic scatter.
+    lidEdition: v.optional(v.string()),
+    stickerSeed: v.optional(v.number()),
+    stickerPositions: v.optional(
+      v.record(v.string(), v.object({ x: v.number(), y: v.number() }))
+    ),
   })
     .index("by_userId", ["userId"])
     // Discovery feed: only rows with isPublic === true are ever read.

@@ -11,8 +11,8 @@ import {
   getCardStats,
 } from "./display";
 
-export type CardThemeKey = "minimal" | "bento" | "terminal";
-export const CARD_THEME_KEYS: CardThemeKey[] = ["minimal", "bento", "terminal"];
+export type CardThemeKey = "minimal" | "lid" | "terminal";
+export const CARD_THEME_KEYS: CardThemeKey[] = ["minimal", "lid", "terminal"];
 
 export function truncate(name: string, max = 22): string {
   return name.length > max ? `${name.slice(0, max - 1)}…` : name;

@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { query, mutation } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { assertCanActAs, assertSectionOwner, isGuestId } from "./authz";
 
 // ============================================
@@ -22,6 +22,11 @@ export const getStack = query({
     subtitle: v.optional(v.string()),
     showWatermark: v.optional(v.boolean()),
     isPublic: v.optional(v.boolean()),
+    lidEdition: v.optional(v.string()),
+    stickerSeed: v.optional(v.number()),
+    stickerPositions: v.optional(
+      v.record(v.string(), v.object({ x: v.number(), y: v.number() }))
+    ),
     authorName: v.optional(v.string()),
     authorHandle: v.optional(v.string()),
     authorAvatarUrl: v.optional(v.string()),
@@ -305,7 +310,7 @@ export const setCardTheme = mutation({
     cardTheme: v.optional(
       v.union(
         v.literal("minimal"),
-        v.literal("bento"),
+        v.literal("lid"),
         v.literal("terminal")
       )
     ),
@@ -323,6 +328,71 @@ export const setCardTheme = mutation({
       await ctx.db.patch(args.stackId, patch);
     }
     return null;
+  },
+});
+
+/**
+ * Lid theme controls: OS edition, sticker scatter seed, and individual
+ * sticker positions (normalized 0..1 within the lid).
+ */
+export const setLidOptions = mutation({
+  args: {
+    stackId: v.id("stacks"),
+    lidEdition: v.optional(
+      v.union(v.literal("apple"), v.literal("microsoft"), v.literal("linux"))
+    ),
+    stickerSeed: v.optional(v.number()),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const stack = await ctx.db.get(args.stackId);
+    if (!stack) throw new Error("Stack not found");
+    await assertCanActAs(ctx, stack.userId);
+    const patch: { lidEdition?: string; stickerSeed?: number } = {};
+    if (args.lidEdition !== undefined) patch.lidEdition = args.lidEdition;
+    if (args.stickerSeed !== undefined) patch.stickerSeed = args.stickerSeed;
+    if (Object.keys(patch).length > 0) await ctx.db.patch(args.stackId, patch);
+    return null;
+  },
+});
+
+export const setStickerPosition = mutation({
+  args: {
+    stackId: v.id("stacks"),
+    toolId: v.id("tools"),
+    x: v.number(),
+    y: v.number(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const stack = await ctx.db.get(args.stackId);
+    if (!stack) throw new Error("Stack not found");
+    await assertCanActAs(ctx, stack.userId);
+    const clamp = (n: number) => Math.min(1, Math.max(0, n));
+    await ctx.db.patch(args.stackId, {
+      stickerPositions: {
+        ...(stack.stickerPositions ?? {}),
+        [args.toolId]: { x: clamp(args.x), y: clamp(args.y) },
+      },
+    });
+    return null;
+  },
+});
+
+/** One-off: bento was replaced by the lid theme. Safe to re-run. */
+export const migrateBentoToLid = internalMutation({
+  args: {},
+  returns: v.number(),
+  handler: async (ctx) => {
+    const stacks = await ctx.db.query("stacks").collect();
+    let n = 0;
+    for (const s of stacks) {
+      if (s.cardTheme === "bento") {
+        await ctx.db.patch(s._id, { cardTheme: "lid" });
+        n++;
+      }
+    }
+    return n;
   },
 });
 

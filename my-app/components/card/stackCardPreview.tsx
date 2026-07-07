@@ -23,7 +23,7 @@ import {
 type StackData = FunctionReturnType<typeof api.stacks.getStack>;
 
 export type { CardThemeKey } from "@/lib/card/render";
-const THEMES: CardThemeKey[] = ["minimal", "bento", "terminal"];
+const THEMES: CardThemeKey[] = ["minimal", "lid", "terminal"];
 
 export default function StackCardPreview({
   stack,
