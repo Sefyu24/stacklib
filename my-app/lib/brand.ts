@@ -1,9 +1,9 @@
 /**
- * Superstack brand constants.
+ * Superstacks brand constants.
  *
  * The logomark glyph comes from the Second Scent brand package
  * (~/Downloads/Second_Scent_Branding) — the mark itself carries no text,
- * so it pairs with a "SUPERSTACK" wordmark set in our own type.
+ * so it pairs with a "SUPERSTACKS" wordmark set in our own type.
  * Colors are normalized to the app tokens (the source files use
  * #1a1a1a/#ed6809; we render with our ink/primary instead).
  */

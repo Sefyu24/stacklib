@@ -85,7 +85,7 @@
      navbar (e.g. the dashboard sidebar) must consume it too — never
      hardcode the px value. */
   --navbar-h: 69px;
-  /* Superstack warm palette (Second Scent) */
+  /* Superstacks warm palette (Second Scent) */
   --background: #f6f1e8;
   --foreground: #1c1712;
   --card: #fffdf8;

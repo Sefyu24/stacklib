@@ -30,8 +30,8 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { stackId } = await params;
   const stack = await getStack(stackId);
-  const title = stack ? `${stack.name} — Superstack` : "Superstack";
-  const description = "A tech stack built and shared with Superstack.";
+  const title = stack ? `${stack.name} — Superstacks` : "Superstacks";
+  const description = "A tech stack built and shared with Superstacks.";
   const cardUrl = `${siteUrl()}/api/card/${stackId}`;
 
   return {
@@ -93,7 +93,7 @@ export default async function SharePage({
           </p>
           <Link href="/stack">
             <Button className="bg-[#ed6809] text-white hover:bg-[#d55e08]">
-              Start on Superstack
+              Start on Superstacks
             </Button>
           </Link>
         </div>

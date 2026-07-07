@@ -8,7 +8,7 @@ export default function LoginPage() {
       subtitle="Your stacks missed you — sign in and pick up where you left off."
       footer={
         <>
-          superstack.app/<span className="text-primary">you</span> — still
+          superstacks.dev/<span className="text-primary">you</span> — still
           yours
         </>
       }

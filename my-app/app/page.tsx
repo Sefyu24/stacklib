@@ -139,7 +139,7 @@ export default function Home() {
             </a>
           </div>
           <span className="font-mono text-[11.5px] text-[#B4A78E]">
-            superstack.app/<span className="text-primary">you</span>
+            superstacks.dev/<span className="text-primary">you</span>
           </span>
         </div>
 
@@ -359,7 +359,7 @@ export default function Home() {
                 </div>
                 <div className="px-4 py-3.5 font-mono text-[11px] leading-[2]">
                   <div className="text-[#C9BCA2]">
-                    <span className="text-[#5BA35B]">$</span> superstack import{" "}
+                    <span className="text-[#5BA35B]">$</span> superstacks import{" "}
                     <span className="text-[#F0E6D2]">github.com/you/app</span>
                   </div>
                   <div className="text-[#8A7B63]">scanning package.json…</div>
@@ -451,7 +451,7 @@ export default function Home() {
               <div className="col-span-2 flex flex-col items-center gap-2.5 lg:col-span-1">
                 <div className="flex items-center gap-[9px] rounded-full border-[1.5px] border-foreground bg-card px-4 py-[11px] shadow-[0_3px_0_var(--foreground)]">
                   <span className="font-mono text-xs font-semibold">
-                    superstack.app/you
+                    superstacks.dev/you
                   </span>
                   <span className="font-mono text-[9.5px] font-bold text-[#5BA35B]">
                     ✓ copied
@@ -545,7 +545,7 @@ export default function Home() {
                 </div>
                 <div className="mt-3 flex items-center justify-between border-t border-[#EDE4D2] pt-[9px]">
                   <span className="font-mono text-[8.5px] text-[#B4A78E]">
-                    superstack.app/you
+                    superstacks.dev/you
                   </span>
                   <Logomark size={13} />
                 </div>
@@ -572,7 +572,7 @@ export default function Home() {
             Tools
           </a>
         </div>
-        <span className="font-mono text-[10.5px]">© 2026 superstack</span>
+        <span className="font-mono text-[10.5px]">© 2026 superstacks</span>
       </footer>
     </main>
   );

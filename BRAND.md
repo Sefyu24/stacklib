@@ -1,6 +1,6 @@
-# Superstack Brand Guidelines
+# Superstacks Brand Guidelines
 
-Durable brand reference for anyone (human or AI) building Superstack UI. Read this **before** touching any visual surface.
+Durable brand reference for anyone (human or AI) building Superstacks UI. Read this **before** touching any visual surface.
 
 - **Source of truth for identity**: the official *Second Scent Brand Guidelines* PDF (`~/Downloads/Second_Scent_Branding/Brand Guidelines.pdf`). Page references below cite it.
 - **Source of truth for code**: the app itself — `my-app/app/globals.css`, `my-app/lib/brand.ts`, `my-app/components/brand/logo.tsx`, `my-app/components/ui/button.tsx`. Every hex/spec in this doc was audited against those files. **When the PDF and the app tokens disagree, the app tokens win in code.**
@@ -9,7 +9,7 @@ Durable brand reference for anyone (human or AI) building Superstack UI. Read th
 
 ## 1. Brand overview
 
-Superstack turns a developer's tech stack into a beautiful, shareable card. The visual identity is adopted from the Second Scent brand package: a warm cream-and-ink palette, a single lava-orange accent, an abstract swirl monogram, and a serif+grotesque wordmark lockup. The overall feel is **warm, tactile, confident** — chunky borders, hard offset shadows, monospace eyebrow labels, and heavy black display type. Nothing glossy, nothing gradient-happy, no cold grays.
+Superstacks turns a developer's tech stack into a beautiful, shareable card. The visual identity is adopted from the Second Scent brand package: a warm cream-and-ink palette, a single lava-orange accent, an abstract swirl monogram, and a serif+grotesque wordmark lockup. The overall feel is **warm, tactile, confident** — chunky borders, hard offset shadows, monospace eyebrow labels, and heavy black display type. Nothing glossy, nothing gradient-happy, no cold grays.
 
 ---
 
@@ -40,7 +40,7 @@ Variants:
 
 Italic serif + heavy grotesque pairing. Original brand faces: **EB Garamond Italic + Forma DJR Display**. Forma DJR is **commercial and unlicensed** — **Archivo 900 is the approved stand-in**. If a Forma DJR web license is ever purchased, swap it in `components/brand/logo.tsx` `Wordmark` (single place).
 
-Superstack wordmark = lowercase **"super"** (EB Garamond italic, weight 600) + **"stack"** (Archivo 900, `letter-spacing: -0.02em`). Always lowercase, always a **single color per use**:
+Superstacks wordmark = lowercase **"super"** (EB Garamond italic, weight 600) + **"stack"** (Archivo 900, `letter-spacing: -0.02em`). Always lowercase, always a **single color per use**:
 
 - Ink (`#1C1712`) on light surfaces (default)
 - Ivory (e.g. `#F0E6D2`) on dark surfaces (footer)
@@ -146,14 +146,14 @@ Three share-card themes, rendered twice (live preview `my-app/components/card/st
 
 - **minimal** — cream matte frame (`#FBF7F0`) around a white card; wordmark eyebrow in orange, mono section labels, warm chips.
 - **bento** — beige shell (`#F3E8D6`); one kanban-style column per section, tinted tiles, amber (`#A0713C`) metadata.
-- **terminal** — dark (`#16110B`) faux shell with traffic lights, mono type, `$ superstack show --pinned` prompt, green ok-lines, blinking orange cursor.
+- **terminal** — dark (`#16110B`) faux shell with traffic lights, mono type, `$ superstacks show --pinned` prompt, green ok-lines, blinking orange cursor.
 
 ---
 
 ## 7. Voice & copy
 
 - Short, confident sentences. Benefit first: "Your tech stack, ready to share."
-- Brand name is lowercase **"superstack"** in wordmark contexts and URLs (`superstack.app/you`). **The all-caps "SUPERSTACK" treatment is retired — never use it.**
+- Brand name is lowercase **"superstacks"** in wordmark contexts and URLs (`superstacks.dev/you`). **The all-caps "SUPERSTACKS" treatment is retired — never use it.**
 - Sentence case for headings ("Build one right now."); UPPERCASE is reserved for mono eyebrows/section labels.
 - Friendly dev tone, light wit allowed ("This stack is still brewing"), no exclamation-mark hype.
 
@@ -170,4 +170,4 @@ Three share-card themes, rendered twice (live preview `my-app/components/card/st
 7. Cards/containers: `border-[1.5px] border-foreground` + `shadow-[0_4px_0_var(--foreground)]`; CTAs `Button variant="brand"`?
 8. shadcn components only; Hugeicons only (zero lucide-react imports)?
 9. OG/card changes: ASCII only (no `✓`), fonts limited to the TTFs in `my-app/assets/fonts`, preview and PNG kept in sync?
-10. Copy: lowercase "superstack", short and confident, no "SUPERSTACK"?
+10. Copy: lowercase "superstacks", short and confident, no "SUPERSTACKS"?

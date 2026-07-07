@@ -296,14 +296,14 @@ export default function StackPile({ stack }: { stack: StackPileStack }) {
             onClick={(e) => e.stopPropagation()}
             className="truncate font-mono text-[9px] text-[#B4A78E] hover:text-primary"
           >
-            superstack.app/{stack.handle}
+            superstacks.dev/{stack.handle}
           </Link>
         ) : (
           <span
             className="truncate font-mono"
             style={{ fontSize: 9, color: "#B4A78E" }}
           >
-            superstack.app/{stack.id}
+            superstacks.dev/{stack.id}
           </span>
         )}
         <Logomark size={14} className="flex-none" />

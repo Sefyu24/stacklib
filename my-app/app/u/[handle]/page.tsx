@@ -29,11 +29,11 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { handle } = await params;
   const data = await getPublicProfile(handle);
-  if (!data) return { title: "Superstack" };
-  const title = `${data.profile.displayName} (@${data.profile.handle}) — Superstack`;
+  if (!data) return { title: "Superstacks" };
+  const title = `${data.profile.displayName} (@${data.profile.handle}) — Superstacks`;
   const description =
     data.profile.tagline ??
-    `${data.profile.displayName}'s tech stacks on Superstack.`;
+    `${data.profile.displayName}'s tech stacks on Superstacks.`;
   return {
     title,
     description,
@@ -84,7 +84,7 @@ export default async function PublicProfilePage({
 
           <div className="min-w-0">
             <p className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
-              Superstack profile
+              Superstacks profile
             </p>
             <h1 className="mt-1 text-[32px] font-black leading-tight tracking-[-0.02em] text-foreground sm:text-[40px]">
               {profile.displayName}
@@ -178,7 +178,7 @@ export default async function PublicProfilePage({
             Takes about a minute — logos included.
           </p>
           <Link href="/stack">
-            <Button variant="brand">Start on Superstack</Button>
+            <Button variant="brand">Start on Superstacks</Button>
           </Link>
         </div>
       </div>

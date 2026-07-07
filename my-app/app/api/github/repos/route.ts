@@ -35,7 +35,7 @@ export async function GET() {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/vnd.github+json",
-        "User-Agent": "superstack-app",
+        "User-Agent": "superstacks-app",
       },
       signal: AbortSignal.timeout(8000),
     }

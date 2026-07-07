@@ -18,7 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["400", "500", "600", "700"],
 });
 
-// Wordmark serif — the "super" in superstack (brand lockup pairing).
+// Wordmark serif — the "super" in superstacks (brand lockup pairing).
 const ebGaramond = EB_Garamond({
   variable: "--font-garamond",
   subsets: ["latin"],
@@ -27,12 +27,12 @@ const ebGaramond = EB_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "Superstack — Share your tech stack",
+  title: "Superstacks — Share your tech stack",
   description:
     "Build your tech stack, get a clean social card, and share it anywhere.",
 };
 
-// Warm Superstack theming for every Clerk component (SignIn, SignUp, UserButton).
+// Warm Superstacks theming for every Clerk component (SignIn, SignUp, UserButton).
 const clerkAppearance: React.ComponentProps<typeof ClerkProvider>["appearance"] =
   {
     variables: {

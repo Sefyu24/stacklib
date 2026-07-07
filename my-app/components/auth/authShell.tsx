@@ -18,7 +18,7 @@ export function AuthShell({
   children: React.ReactNode;
 }) {
   return (
-    <main className="relative flex min-h-[calc(100svh-69px)] flex-col items-center justify-center overflow-hidden bg-background px-6 py-14 text-foreground sm:py-16">
+    <main className="relative flex min-h-[calc(100svh-var(--navbar-h))] flex-col items-center justify-center overflow-hidden bg-background px-6 py-14 text-foreground sm:py-16">
       {/* Faint oversized logomark drifting off the corner (watermark variant). */}
       <div
         aria-hidden

@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import DashboardShell from "@/components/dashboard/dashboardShell";
 
 export const metadata: Metadata = {
-  title: "Dashboard — Superstack",
-  description: "Manage your Superstack profile and stack cards.",
+  title: "Dashboard — Superstacks",
+  description: "Manage your Superstacks profile and stack cards.",
 };
 
 export default async function DashboardPage() {

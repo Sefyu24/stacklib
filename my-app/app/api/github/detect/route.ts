@@ -16,7 +16,7 @@ const GITHUB_API = "https://api.github.com";
 function githubHeaders(token?: string): HeadersInit {
   const headers: Record<string, string> = {
     Accept: "application/vnd.github+json",
-    "User-Agent": "superstack-app",
+    "User-Agent": "superstacks-app",
   };
   // User token (private repos) beats the optional env token (rate limit).
   const auth_ = token ?? process.env.GITHUB_TOKEN;

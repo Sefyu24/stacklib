@@ -245,7 +245,7 @@ export default function Playground() {
             )}
             <div className="mt-3.5 flex items-center justify-between border-t border-[#EDE4D2] pt-[9px]">
               <span className="font-mono text-[9px] text-[#B4A78E]">
-                superstack.app
+                superstacks.dev
               </span>
               <Logomark size={13} />
             </div>

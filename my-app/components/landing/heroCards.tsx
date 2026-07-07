@@ -51,7 +51,7 @@ function TerminalMini() {
       <div className="flex flex-1 flex-col justify-center px-4 font-mono text-[10.5px] leading-[1.95]">
         <div className="text-[#C9BCA2]">
           <span className="text-primary">~</span>{" "}
-          <span className="text-[#5BA35B]">$</span> superstack show
+          <span className="text-[#5BA35B]">$</span> superstacks show
         </div>
         <div>
           <span className="text-primary">frontend</span>
@@ -75,7 +75,7 @@ function TerminalMini() {
         </div>
         <div className="text-[#5BA35B]">✓ 6 tools · 4 pinned</div>
         <div className="text-[#6B5D46]">
-          superstack.app
+          superstacks.dev
           <span className="ml-[5px] inline-block h-[11px] w-1.5 -translate-y-px animate-[blink_1.1s_step-end_infinite] bg-primary align-middle" />
         </div>
       </div>
@@ -145,7 +145,7 @@ function BentoMini() {
         ))}
       </div>
       <div className="mt-1.5 text-center font-mono text-[7.5px] text-[#A0713C]">
-        superstack.app
+        superstacks.dev
       </div>
     </div>
   );
@@ -199,7 +199,7 @@ function MinimalMini() {
         </div>
         <div className="mt-1.5 flex items-center justify-between border-t border-[#EDE4D2] pt-1.5">
           <span className="font-mono text-[8px] text-[#B4A78E]">
-            superstack.app
+            superstacks.dev
           </span>
           <Logomark size={13} />
         </div>

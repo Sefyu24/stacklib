@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import StackPile from "@/components/browse/stackPile";
 
 export const metadata: Metadata = {
-  title: "Browse stacks — Superstack",
+  title: "Browse stacks — Superstacks",
   description:
     "Discover public tech stacks from indie hackers, teams, and students. See what they ship with.",
 };

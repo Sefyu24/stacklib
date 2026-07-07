@@ -362,7 +362,7 @@ function Wordmark({
           k
         )}
       >
-        stack
+        stacks
       </div>
     </div>
   );
@@ -392,7 +392,7 @@ function EmptyBody({ k }: { k: number }) {
         This stack is still brewing
       </div>
       <div style={scaleStyle({ display: "flex", fontSize: 22, color: TAUPE }, k)}>
-        Build yours at superstack.app
+        Build yours at superstacks.dev
       </div>
     </div>
   );
@@ -581,7 +581,7 @@ function MinimalCard({ data, fonts, k }: ThemeProps) {
                 k
               )}
             >
-              superstack.app
+              superstacks.dev
             </div>
             <Logomark size={30 * k} />
           </div>
@@ -762,7 +762,7 @@ function BentoCard({ data, fonts, k }: ThemeProps) {
               k
             )}
           >
-            superstack.app
+            superstacks.dev
           </div>
         </div>
       )}
@@ -856,7 +856,7 @@ function TerminalCard({ data, fonts, k }: ThemeProps) {
         <div style={{ display: "flex", color: "#C9BCA2" }}>
           <span style={{ color: ORANGE }}>~</span>
           <span style={scaleStyle({ color: "#5BA35B", marginLeft: 12 }, k)}>$</span>
-          <span style={scaleStyle({ marginLeft: 12 }, k)}>superstack show</span>
+          <span style={scaleStyle({ marginLeft: 12 }, k)}>superstacks show</span>
           <span style={scaleStyle({ color: "#8A7B63", marginLeft: 12 }, k)}>
             --pinned
           </span>
@@ -898,7 +898,7 @@ function TerminalCard({ data, fonts, k }: ThemeProps) {
             </div>
             {overflow > 0 && (
               <div style={{ display: "flex", color: "#6B5D46" }}>
-                # +{overflow} more on superstack.app
+                # +{overflow} more on superstacks.dev
               </div>
             )}
           </div>
@@ -912,7 +912,7 @@ function TerminalCard({ data, fonts, k }: ThemeProps) {
               marginTop: "auto",
             }}
           >
-            superstack.app
+            superstacks.dev
             <span
               style={scaleStyle(
                 {

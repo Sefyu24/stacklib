@@ -98,7 +98,7 @@ export default function ProfileSection() {
           Your profile
         </h1>
         <p className="mt-1 text-[15px] text-[#8A7B63]">
-          This is how you show up on your public Superstack page.
+          This is how you show up on your public Superstacks page.
         </p>
       </div>
 

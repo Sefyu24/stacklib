@@ -68,7 +68,7 @@ async function fetchLogoAsDataUri(url: string): Promise<string | null> {
   try {
     const res = await fetch(url, {
       signal: AbortSignal.timeout(LOGO_FETCH_TIMEOUT_MS),
-      headers: { "User-Agent": "Superstack/1.0 (+https://superstack.app)" },
+      headers: { "User-Agent": "Superstacks/1.0 (+https://superstacks.dev)" },
     });
     if (!res.ok) return null;
     const buf = Buffer.from(await res.arrayBuffer());

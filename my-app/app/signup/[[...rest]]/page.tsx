@@ -8,7 +8,7 @@ export default function SignupPage() {
       subtitle="Turn your tools into a card worth posting. Free, takes a minute."
       footer={
         <>
-          superstack.app/<span className="text-primary">you</span> — claim
+          superstacks.dev/<span className="text-primary">you</span> — claim
           yours
         </>
       }

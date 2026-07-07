@@ -1,4 +1,4 @@
-// Curated tool catalog, ported from the Superstack Builder design. Powers the
+// Curated tool catalog, ported from the Superstacks Builder design. Powers the
 // universal search: a query matches across all categories, and each hit knows
 // which section it belongs to. `slug` is a Simple Icons slug used for the logo
 // (https://cdn.simpleicons.org/<slug>); custom tools fall back to Brandfetch.

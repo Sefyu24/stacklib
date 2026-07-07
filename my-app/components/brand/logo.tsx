@@ -8,7 +8,7 @@ import {
 } from "@/lib/brand";
 
 /**
- * The Superstack logomark glyph. `size` is the rendered height; width keeps
+ * The Superstacks logomark glyph. `size` is the rendered height; width keeps
  * the glyph's natural aspect. Defaults to the all-orange brand variant;
  * pass `ink`/`accent` to recolor (two-tone onyx+orange, all-ivory on dark).
  * Plain SVG with explicit fills so it renders identically in the browser
@@ -44,7 +44,7 @@ export function Logomark({
 }
 
 /**
- * The Superstack wordmark, mirroring the brand lockup pairing:
+ * The Superstacks wordmark, mirroring the brand lockup pairing:
  * italic serif "super" (EB Garamond) + heavy grotesque "stack"
  * (Archivo 900 standing in for the commercial Forma DJR Display).
  * Single color per brand rules; `size` is the font size in px.
@@ -79,7 +79,7 @@ export function Wordmark({
           letterSpacing: "-0.02em",
         }}
       >
-        stack
+        stacks
       </span>
     </span>
   );
