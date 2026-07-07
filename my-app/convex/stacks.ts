@@ -20,6 +20,7 @@ export const getStack = query({
     projectURL: v.optional(v.string()),
     cardTheme: v.optional(v.string()),
     subtitle: v.optional(v.string()),
+    description: v.optional(v.string()),
     showWatermark: v.optional(v.boolean()),
     isPublic: v.optional(v.boolean()),
     lidEdition: v.optional(v.string()),
@@ -463,22 +464,70 @@ export const updateStackDetails = mutation({
     stackId: v.id("stacks"),
     title: v.optional(v.string()),
     subtitle: v.optional(v.string()),
+    // Longer description (shown on the share page / profile, not the card).
+    description: v.optional(v.string()),
+    // Repo / project link (stored on the existing projectURL field).
+    repoUrl: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
     const stack = await ctx.db.get(args.stackId);
     if (!stack) throw new Error("Stack not found");
     await assertCanActAs(ctx, stack.userId);
-    const patch: { name?: string; subtitle?: string } = {};
+    const patch: {
+      name?: string;
+      subtitle?: string;
+      description?: string;
+      projectURL?: string;
+    } = {};
     if (args.title !== undefined) {
       patch.name = args.title.trim() || "My Tech Stack";
     }
     if (args.subtitle !== undefined) {
       patch.subtitle = args.subtitle.trim();
     }
+    if (args.description !== undefined) {
+      patch.description = args.description.trim();
+    }
+    if (args.repoUrl !== undefined) {
+      patch.projectURL = args.repoUrl.trim();
+    }
     if (Object.keys(patch).length > 0) {
       await ctx.db.patch(args.stackId, patch);
     }
+    return null;
+  },
+});
+
+/**
+ * Delete a stack and everything under it (sections, selected & pinned tools).
+ * Multi-card: users can remove cards they no longer want.
+ */
+export const deleteStack = mutation({
+  args: { stackId: v.id("stacks") },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const stack = await ctx.db.get(args.stackId);
+    if (!stack) return null;
+    await assertCanActAs(ctx, stack.userId);
+    const sections = await ctx.db
+      .query("sections")
+      .withIndex("by_stackId", (q) => q.eq("stackId", args.stackId))
+      .collect();
+    for (const section of sections) {
+      const selected = await ctx.db
+        .query("selectedTools")
+        .withIndex("by_sectionId", (q) => q.eq("sectionId", section._id))
+        .collect();
+      for (const st of selected) await ctx.db.delete(st._id);
+      const pinned = await ctx.db
+        .query("pinnedTools")
+        .withIndex("by_sectionId", (q) => q.eq("sectionId", section._id))
+        .collect();
+      for (const pt of pinned) await ctx.db.delete(pt._id);
+      await ctx.db.delete(section._id);
+    }
+    await ctx.db.delete(args.stackId);
     return null;
   },
 });

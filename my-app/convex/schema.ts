@@ -31,6 +31,9 @@ export default defineSchema({
     showWatermark: v.optional(v.boolean()),
     // Optional one-line tagline rendered under the title on the card.
     subtitle: v.optional(v.string()),
+    // Longer description shown when viewing the card on the site (share page /
+    // profile) — NOT rendered on the card image itself.
+    description: v.optional(v.string()),
     // Optional profile identity rendered on the card.
     authorName: v.optional(v.string()),
     authorHandle: v.optional(v.string()),

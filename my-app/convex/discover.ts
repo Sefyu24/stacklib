@@ -30,7 +30,13 @@ const pileSectionValidator = v.object({
  * render the "loose pile" cards without an extra roundtrip per stack.
  */
 export const listPublicStacks = query({
-  args: { limit: v.optional(v.number()) },
+  args: {
+    limit: v.optional(v.number()),
+    // Optional tool-name filter (lowercased). matchMode "all" = stack must
+    // contain every selected tool; "any" = at least one. Defaults to "all".
+    toolFilter: v.optional(v.array(v.string())),
+    matchMode: v.optional(v.union(v.literal("all"), v.literal("any"))),
+  },
   returns: v.array(
     v.object({
       id: v.id("stacks"),
@@ -46,13 +52,22 @@ export const listPublicStacks = query({
   ),
   handler: async (ctx, args) => {
     const limit = Math.min(Math.max(args.limit ?? 24, 1), 60);
+    const filter = (args.toolFilter ?? [])
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
+    const matchMode = args.matchMode ?? "all";
+    // With a filter we scan a larger pool and narrow in memory; without one we
+    // just take the newest `limit`. (Denormalize toolNames[] + an index if the
+    // public feed ever grows past a few hundred stacks.)
+    const scan = filter.length > 0 ? 200 : limit;
+
     const stacks = await ctx.db
       .query("stacks")
       .withIndex("by_public", (q) => q.eq("isPublic", true))
       .order("desc")
-      .take(limit);
+      .take(scan);
 
-    return Promise.all(
+    const built = await Promise.all(
       stacks.map(async (stack) => {
         let handle: string | undefined;
         let profileName: string | undefined;
@@ -74,6 +89,8 @@ export const listPublicStacks = query({
         sections.sort((a, b) => a.order - b.order);
 
         let toolCount = 0;
+        // Every tool name on the stack, lowercased — used for the tool filter.
+        const toolNamesLower: string[] = [];
         const inputs: DisplaySectionInput[] = [];
         // Full selected count per section, keyed by type+name (the display
         // model drops empty sections, so counts are matched back by key).
@@ -93,6 +110,7 @@ export const listPublicStacks = query({
           for (const row of selectedRows) {
             const tool = await ctx.db.get(row.toolId);
             if (!tool) continue; // deleted tool; keep the feed resilient
+            toolNamesLower.push(tool.name.toLowerCase());
             selectedTools.push({
               toolId: row.toolId as string,
               order: row.order,
@@ -153,8 +171,26 @@ export const listPublicStacks = query({
               : stack.authorAvatarUrl || undefined,
           toolCount,
           sections: sectionSummaries,
+          // Internal — used for filtering, stripped before returning.
+          _toolNames: toolNamesLower,
         };
       })
     );
+
+    const matched =
+      filter.length === 0
+        ? built
+        : built.filter((s) => {
+            const set = new Set(s._toolNames);
+            return matchMode === "any"
+              ? filter.some((f) => set.has(f))
+              : filter.every((f) => set.has(f));
+          });
+
+    // Strip the internal field and cap to the requested page size.
+    return matched.slice(0, limit).map(({ _toolNames, ...rest }) => {
+      void _toolNames;
+      return rest;
+    });
   },
 });
