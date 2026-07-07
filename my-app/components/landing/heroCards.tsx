@@ -127,41 +127,6 @@ function HeroCard({ data }: { data: CardRenderData }) {
     </div>
   );
 
-  // The lid theme gets a MacBook treatment so it reads as a real laptop:
-  // a tilted screen with depth, a brushed-aluminum base/deck below with a
-  // hinge notch, and a soft grounded shadow.
-  if (data.theme === "lid") {
-    return (
-      <div style={{ perspective: 1600 }}>
-        <div
-          style={{
-            transform: "rotateX(7deg)",
-            transformStyle: "preserve-3d",
-          }}
-        >
-          {/* screen / lid */}
-          <div
-            className="relative rounded-[16px] border-[1.5px] border-[#0E0B07] shadow-[0_26px_50px_-12px_rgba(20,16,10,0.55),0_8px_0_#0E0B07]"
-            style={{ width: CARD_W, height: CARD_H }}
-          >
-            <div className="overflow-hidden rounded-[15px]">{screen}</div>
-            {/* camera notch */}
-            <div className="absolute left-1/2 top-[6px] size-[4px] -translate-x-1/2 rounded-full bg-[#3A342B]" />
-          </div>
-          {/* base / deck seen edge-on */}
-          <div
-            className="relative mx-auto mt-[3px]"
-            style={{ width: CARD_W * 1.07 }}
-          >
-            <div className="h-[15px] w-full rounded-b-[12px] rounded-t-[3px] border-x-[1.5px] border-b-[1.5px] border-[#0E0B07] bg-gradient-to-b from-[#D2CBBF] to-[#ADA595] shadow-[0_16px_26px_-8px_rgba(20,16,10,0.4)]" />
-            {/* hinge cutout */}
-            <div className="absolute left-1/2 top-0 h-[5px] w-[92px] -translate-x-1/2 rounded-b-[7px] bg-[#7C7568]" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="overflow-hidden rounded-[18px] shadow-[0_16px_38px_rgba(60,40,10,0.18)]">
       {screen}
@@ -188,9 +153,8 @@ const FLOAT = [
 
 const EASE = "cubic-bezier(0.34, 1.2, 0.4, 1)";
 
-// Room above/below the card so the float drift + laptop base + shadow never
-// clip (the lid theme adds a base deck below the screen).
-const STAGE_H = CARD_H + 120;
+// Room above/below the card so the float drift + shadow never clip.
+const STAGE_H = CARD_H + 90;
 
 /**
  * Hero art. Desktop: three cards in a floating composition; arrows rotate
