@@ -5,7 +5,12 @@ import { ConvexHttpClient } from "convex/browser";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { DisplaySectionInput, getCardSections } from "@/lib/card/display";
-import { buildCardRenderData } from "@/lib/card/render";
+import {
+  buildCardRenderData,
+  getCardThemeKey,
+  getLidEdition,
+  LID_MARK_URL,
+} from "@/lib/card/render";
 import { toolLogoUrl } from "@/lib/logo";
 import {
   CardArt,
@@ -130,6 +135,13 @@ export async function GET(
       ? await fetchLogoAsDataUri(stack.authorAvatarUrl)
       : null;
 
+  // The lid theme's center OS mark also has to be a data URI for satori.
+  const lidMarkUrl =
+    getCardThemeKey(stack.cardTheme) === "lid"
+      ? LID_MARK_URL[getLidEdition(stack.lidEdition)]
+      : null;
+  const lidMarkSrc = lidMarkUrl ? await fetchLogoAsDataUri(lidMarkUrl) : null;
+
   const data = buildCardRenderData(
     {
       name: stack.name,
@@ -140,9 +152,13 @@ export async function GET(
       showAvatar: stack.showAvatar,
       authorName: stack.authorName,
       authorHandle: stack.authorHandle,
+      lidEdition: stack.lidEdition,
+      stickerSeed: stack.stickerSeed,
+      stickerPositions: stack.stickerPositions,
     },
     (t) => logoByToolId.get(t.toolId) ?? null,
-    avatarSrc
+    avatarSrc,
+    lidMarkSrc
   );
 
   const fonts = await loadFonts();
