@@ -506,8 +506,7 @@ export default function Home() {
             <div className="absolute -right-10 -top-10 size-40 rounded-full border-[1.5px] border-dashed border-[#D9A16B]" />
             <div className="absolute left-1/2 top-1/2 w-[330px] -translate-x-1/2 -translate-y-1/2 rotate-[-3deg] rounded-[18px] border-[1.5px] border-foreground bg-[#FBF7F0] p-[9px] shadow-[0_6px_0_var(--foreground),0_22px_44px_rgba(60,40,10,0.2)]">
               <div className="rounded-[11px] border border-[#EDE4D2] bg-card px-5 pb-3 pt-[18px]">
-                <div className="flex items-baseline justify-between">
-                  <Wordmark size={12} color="#EC5B13" />
+                <div className="flex items-baseline justify-end">
                   <span className="font-mono text-[9px] text-[#B4A78E]">
                     7 tools · 5 pinned
                   </span>

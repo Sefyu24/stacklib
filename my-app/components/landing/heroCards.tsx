@@ -75,7 +75,7 @@ function TerminalMini() {
         </div>
         <div className="text-[#5BA35B]">✓ 6 tools · 4 pinned</div>
         <div className="text-[#6B5D46]">
-          superstacks.dev
+          powered by superstacks.dev
           <span className="ml-[5px] inline-block h-[11px] w-1.5 -translate-y-px animate-[blink_1.1s_step-end_infinite] bg-primary align-middle" />
         </div>
       </div>
@@ -113,8 +113,7 @@ function BentoMini() {
       className="flex flex-col rounded-2xl border-[1.5px] border-foreground bg-[#F3E8D6] p-3 shadow-[0_4px_0_var(--foreground)]"
       style={{ width: CARD_W, height: CARD_H }}
     >
-      <div className="mb-1 flex items-baseline justify-between">
-        <Wordmark size={12} color="#EC5B13" />
+      <div className="mb-1 flex items-baseline justify-end">
         <span className="font-mono text-[8.5px] text-[#A0713C]">6 tools</span>
       </div>
       <div className="mb-2 text-[15px] font-black tracking-[-0.02em]">
@@ -145,7 +144,7 @@ function BentoMini() {
         ))}
       </div>
       <div className="mt-1.5 text-center font-mono text-[7.5px] text-[#A0713C]">
-        superstacks.dev
+        powered by superstacks.dev
       </div>
     </div>
   );
@@ -158,8 +157,7 @@ function MinimalMini() {
       style={{ width: CARD_W, height: CARD_H }}
     >
       <div className="flex flex-1 flex-col rounded-[11px] border border-[#EDE4D2] bg-card px-4 pb-2 pt-2.5">
-        <div className="flex items-baseline justify-between">
-          <Wordmark size={12} color="#EC5B13" />
+        <div className="flex items-baseline justify-end">
           <span className="font-mono text-[8.5px] text-[#B4A78E]">
             7 tools · 5 pinned
           </span>
@@ -199,7 +197,7 @@ function MinimalMini() {
         </div>
         <div className="mt-1.5 flex items-center justify-between border-t border-[#EDE4D2] pt-1.5">
           <span className="font-mono text-[8px] text-[#B4A78E]">
-            superstacks.dev
+            powered by superstacks.dev
           </span>
           <Logomark size={13} />
         </div>

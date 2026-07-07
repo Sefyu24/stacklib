@@ -319,55 +319,6 @@ function MoreChip({
   );
 }
 
-function Wordmark({
-  fonts,
-  k,
-  color = ORANGE,
-}: {
-  fonts: CardFonts;
-  k: number;
-  color?: string;
-}) {
-  return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "baseline",
-        color,
-      }}
-    >
-      <div
-        style={scaleStyle(
-          {
-            display: "flex",
-            fontFamily: fonts.serif,
-            fontStyle: "italic",
-            fontWeight: 600,
-            fontSize: 28,
-          },
-          k
-        )}
-      >
-        super
-      </div>
-      <div
-        style={scaleStyle(
-          {
-            display: "flex",
-            fontFamily: fonts.sans,
-            fontWeight: 900,
-            fontSize: 26,
-            letterSpacing: -0.5,
-          },
-          k
-        )}
-      >
-        stacks
-      </div>
-    </div>
-  );
-}
-
 function EmptyBody({ k }: { k: number }) {
   return (
     <div
@@ -425,11 +376,10 @@ function MinimalCard({ data, fonts, k }: ThemeProps) {
           style={{
             display: "flex",
             flexShrink: 0,
-            justifyContent: "space-between",
+            justifyContent: "flex-end",
             alignItems: "center",
           }}
         >
-          <Wordmark fonts={fonts} k={k} />
           {!isEmpty && (
             <div
               style={scaleStyle(
@@ -581,7 +531,7 @@ function MinimalCard({ data, fonts, k }: ThemeProps) {
                 k
               )}
             >
-              superstacks.dev
+              powered by superstacks.dev
             </div>
             <Logomark size={30 * k} />
           </div>
@@ -610,11 +560,10 @@ function BentoCard({ data, fonts, k }: ThemeProps) {
         style={{
           display: "flex",
           flexShrink: 0,
-          justifyContent: "space-between",
+          justifyContent: "flex-end",
           alignItems: "center",
         }}
       >
-        <Wordmark fonts={fonts} k={k} />
         {!isEmpty && (
           <div
             style={scaleStyle(
@@ -747,7 +696,13 @@ function BentoCard({ data, fonts, k }: ThemeProps) {
       {showWatermark && (
         <div
           style={scaleStyle(
-            { display: "flex", flexShrink: 0, justifyContent: "center", marginTop: 12 },
+            {
+              display: "flex",
+              flexShrink: 0,
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginTop: 12,
+            },
             k
           )}
         >
@@ -762,8 +717,9 @@ function BentoCard({ data, fonts, k }: ThemeProps) {
               k
             )}
           >
-            superstacks.dev
+            powered by superstacks.dev
           </div>
+          <Logomark size={30 * k} />
         </div>
       )}
     </Chunky>
@@ -908,23 +864,27 @@ function TerminalCard({ data, fonts, k }: ThemeProps) {
             style={{
               display: "flex",
               alignItems: "center",
+              justifyContent: "space-between",
               color: "#6B5D46",
               marginTop: "auto",
             }}
           >
-            superstacks.dev
-            <span
-              style={scaleStyle(
-                {
-                  display: "flex",
-                  width: 12,
-                  height: 22,
-                  background: ORANGE,
-                  marginLeft: 8,
-                },
-                k
-              )}
-            />
+            <div style={{ display: "flex", alignItems: "center" }}>
+              powered by superstacks.dev
+              <span
+                style={scaleStyle(
+                  {
+                    display: "flex",
+                    width: 12,
+                    height: 22,
+                    background: ORANGE,
+                    marginLeft: 8,
+                  },
+                  k
+                )}
+              />
+            </div>
+            <Logomark size={26 * k} />
           </div>
         )}
       </div>

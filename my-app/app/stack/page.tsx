@@ -20,7 +20,7 @@ import SectionsBoard from "@/components/builder/sectionsBoard";
 import StackCardPreview from "@/components/card/stackCardPreview";
 import GithubImportDialog from "@/components/github/importDialog";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { PinIcon } from "@hugeicons/core-free-icons";
+import { PencilEdit02Icon, PinIcon } from "@hugeicons/core-free-icons";
 
 const GUEST_KEY = "superstack_guest_id";
 
@@ -250,29 +250,47 @@ export default function StackEditor() {
             <GithubImportDialog sections={stack.sections} />
           </div>
 
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={commitTitle}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") e.currentTarget.blur();
-            }}
-            aria-label="Stack name"
-            spellCheck={false}
-            className="mb-1.5 w-full border-none bg-transparent p-0 text-[26px] font-black tracking-[-0.02em] text-foreground outline-none sm:text-[34px]"
-          />
-          <input
-            value={subtitle}
-            onChange={(e) => setSubtitle(e.target.value)}
-            onBlur={commitSubtitle}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") e.currentTarget.blur();
-            }}
-            aria-label="Stack tagline"
-            spellCheck={false}
-            placeholder="Add a one-line tagline (optional)"
-            className="mb-1.5 w-full border-none bg-transparent p-0 text-[15px] font-medium text-[#8A7B63] outline-none placeholder:text-[#B4A78E]"
-          />
+          {/* Title and tagline are editable in place — the dashed hover
+              outline and the pencil make that discoverable. */}
+          <div className="group/title relative mb-1.5 flex items-center gap-2.5">
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              onBlur={commitTitle}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+              }}
+              aria-label="Stack name"
+              spellCheck={false}
+              title="Click to rename your stack"
+              className="-mx-1.5 w-full min-w-0 rounded-lg border border-transparent bg-transparent px-1.5 py-0.5 text-[26px] font-black tracking-[-0.02em] text-foreground outline-none transition-colors hover:border-dashed hover:border-[#D9C7A8] focus:border-solid focus:border-primary sm:text-[34px]"
+            />
+            <HugeiconsIcon
+              icon={PencilEdit02Icon}
+              className="pointer-events-none h-[19px] w-[19px] flex-none text-[#C9BCA2] transition-colors group-hover/title:text-[#A0713C] group-focus-within/title:text-primary"
+              aria-hidden
+            />
+          </div>
+          <div className="group/tagline relative mb-1.5 flex items-center gap-2.5">
+            <input
+              value={subtitle}
+              onChange={(e) => setSubtitle(e.target.value)}
+              onBlur={commitSubtitle}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") e.currentTarget.blur();
+              }}
+              aria-label="Stack tagline"
+              spellCheck={false}
+              placeholder="Add a one-line tagline (optional)"
+              title="Click to edit the tagline"
+              className="-mx-1.5 w-full min-w-0 rounded-lg border border-transparent bg-transparent px-1.5 py-0.5 text-[15px] font-medium text-[#8A7B63] outline-none transition-colors placeholder:text-[#B4A78E] hover:border-dashed hover:border-[#D9C7A8] focus:border-solid focus:border-primary"
+            />
+            <HugeiconsIcon
+              icon={PencilEdit02Icon}
+              className="pointer-events-none h-[14px] w-[14px] flex-none text-[#C9BCA2] transition-colors group-hover/tagline:text-[#A0713C] group-focus-within/tagline:text-primary"
+              aria-hidden
+            />
+          </div>
           <p className="mb-6 flex flex-wrap items-center gap-1 text-[13.5px] leading-relaxed text-[#8A7B63]">
             Search once, we file each tool in the right section. Pin
             <HugeiconsIcon
