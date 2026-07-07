@@ -1,18 +1,24 @@
 "use client";
 
 // Landing "Steal ideas from other builders" section — the loose-pile design
-// borrowed from components/browse/stackPile.tsx. Each sample stack is a rotated
-// pile of section-cards that FANS OPEN on hover (desktop, fine pointer) and on
-// TAP (mobile — the card toggles open/closed, it is NOT always extended). Every
-// card also carries an explicit Hugeicons stack-glyph toggle button. Reduced-
-// motion users get the open column with no animation (see .commpile rules in
-// app/globals.css). Tool logos are self-hosted Brandfetch PNGs
-// (/hero-icons/<slug>.png) layered over a letter tile, so a missing slug shows
-// the letter — never an empty box, never a CDN call.
+// borrowed from components/browse/stackPile.tsx. Each stack is a rotated pile
+// of section-cards that FANS OPEN on hover (desktop, fine pointer) and on TAP /
+// CLICK anywhere on the card (mobile + desktop — the whole card is a toggle, it
+// is NOT always extended). An explicit Hugeicons stack-glyph button remains as a
+// visible affordance. The card is keyboard-operable (role=button, Enter/Space
+// toggle). Inner links (@handle -> the person's real X profile) stopPropagation
+// so they don't also fire the toggle. Reduced-motion users get the open column
+// with no animation (see .commpile rules in app/globals.css).
+//
+// The three stacks below are REAL, publicly-known stacks of public developers.
+// Taglines are factual descriptions of their public work — NOT invented quotes.
+//
+// Tool logos are self-hosted Brandfetch PNGs (/hero-icons/<slug>.png) layered
+// over a letter tile, so a missing slug (e.g. tmux, html5) shows the letter —
+// never an empty box, never a CDN call.
 
-import type { CSSProperties } from "react";
+import type { CSSProperties, KeyboardEvent } from "react";
 import { useState } from "react";
-import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Layers01Icon } from "@hugeicons/core-free-icons";
 import { Logomark } from "@/components/brand/logo";
@@ -32,30 +38,81 @@ interface PileSection {
 interface PileStack {
   initial: string;
   avatarBg: string;
+  // Display handle including the leading "@" (e.g. "@levelsio").
   handle: string;
+  // Real name shown as the primary label.
+  name: string;
   meta: string;
-  quote: string;
+  // Factual tagline describing their public work — not a first-person quote.
+  tagline: string;
   sections: PileSection[];
 }
 
-// Reuses the section's existing sample copy (maker.mia indie SaaS, dev.theo
-// full-stack) plus kai.learns (student) — now expanded into pile sections.
+// Three real public developer stacks. Tool slugs map to /hero-icons/<slug>.png;
+// slugs without a self-hosted PNG (tmux, html5) fall back to the letter tile.
 const SAMPLES: PileStack[] = [
   {
-    initial: "M",
+    initial: "P",
     avatarBg: "var(--primary)",
-    handle: "maker.mia",
-    meta: "indie SaaS · 9 tools",
-    quote: "“Boring stack, fast shipping. Everything talks to everything.”",
+    handle: "@levelsio",
+    name: "Pieter Levels",
+    meta: "solo maker · 9 tools",
+    tagline: "Ships solo. One PHP file, no frameworks.",
     sections: [
       {
         name: "Frontend",
         sectionType: "frontend",
         count: 3,
+        tools: [
+          { name: "HTML", slug: "html5" },
+          { name: "jQuery", slug: "jquery" },
+          { name: "Tailwind", slug: "tailwindcss" },
+        ],
+      },
+      {
+        name: "Backend",
+        sectionType: "backend",
+        count: 2,
+        tools: [
+          { name: "PHP", slug: "php" },
+          { name: "SQLite", slug: "sqlite" },
+        ],
+      },
+      {
+        name: "Deploy",
+        sectionType: "deploy",
+        count: 3,
+        tools: [
+          { name: "DigitalOcean", slug: "digitalocean" },
+          { name: "Nginx", slug: "nginx" },
+          { name: "Cloudflare", slug: "cloudflare" },
+        ],
+      },
+      {
+        name: "Payments",
+        sectionType: "payments",
+        count: 1,
+        tools: [{ name: "Stripe", slug: "stripe" }],
+      },
+    ],
+  },
+  {
+    initial: "T",
+    avatarBg: "var(--foreground)",
+    handle: "@theo",
+    name: "Theo Browne",
+    meta: "full-stack · 8 tools",
+    tagline: "Creator of the T3 stack. Full-stack TypeScript.",
+    sections: [
+      {
+        name: "Frontend",
+        sectionType: "frontend",
+        count: 4,
         tools: [
           { name: "Next.js", slug: "nextdotjs" },
-          { name: "Tailwind", slug: "tailwindcss" },
           { name: "React", slug: "react" },
+          { name: "Tailwind", slug: "tailwindcss" },
+          { name: "TypeScript", slug: "typescript" },
         ],
       },
       {
@@ -63,95 +120,51 @@ const SAMPLES: PileStack[] = [
         sectionType: "backend",
         count: 3,
         tools: [
-          { name: "Supabase", slug: "supabase" },
-          { name: "Postgres", slug: "postgresql" },
-          { name: "Node.js", slug: "nodedotjs" },
+          { name: "tRPC", slug: "trpc" },
+          { name: "Prisma", slug: "prisma" },
+          { name: "PlanetScale", slug: "planetscale" },
         ],
       },
       {
-        name: "Other",
-        sectionType: "other",
-        count: 3,
-        tools: [
-          { name: "Stripe", slug: "stripe" },
-          { name: "Vercel", slug: "vercel" },
-          { name: "Linear", slug: "linear" },
-        ],
+        name: "Deploy",
+        sectionType: "deploy",
+        count: 1,
+        tools: [{ name: "Vercel", slug: "vercel" }],
       },
     ],
   },
   {
-    initial: "D",
-    avatarBg: "var(--foreground)",
-    handle: "dev.theo",
-    meta: "full-stack · 11 tools",
-    quote: "“Zero JS frameworks on the backend. Go + Postgres forever.”",
-    sections: [
-      {
-        name: "Frontend",
-        sectionType: "frontend",
-        count: 2,
-        tools: [
-          { name: "Svelte", slug: "svelte" },
-          { name: "Vue.js", slug: "vuedotjs" },
-        ],
-      },
-      {
-        name: "Backend",
-        sectionType: "backend",
-        count: 3,
-        tools: [
-          { name: "Go", slug: "go" },
-          { name: "Postgres", slug: "postgresql" },
-          { name: "Docker", slug: "docker" },
-        ],
-      },
-      {
-        name: "IDE",
-        sectionType: "ide",
-        count: 2,
-        tools: [
-          { name: "VS Code", slug: "vscode" },
-          { name: "GitHub", slug: "github" },
-        ],
-      },
-    ],
-  },
-  {
-    initial: "K",
+    initial: "P",
     avatarBg: "#5BA35B",
-    handle: "kai.learns",
-    meta: "student · 7 tools",
-    quote:
-      "“First stack card for my portfolio — recruiters actually clicked it.”",
+    handle: "@ThePrimeagen",
+    name: "ThePrimeagen",
+    meta: "terminal-driven · 6 tools",
+    tagline: "Neovim, Rust & Go. tmux-driven, built Harpoon.",
     sections: [
       {
-        name: "Frontend",
-        sectionType: "frontend",
+        name: "Editor",
+        sectionType: "editor",
         count: 2,
         tools: [
-          { name: "React", slug: "react" },
-          { name: "Tailwind", slug: "tailwindcss" },
+          { name: "Neovim", slug: "neovim" },
+          { name: "tmux", slug: "tmux" },
         ],
       },
       {
-        name: "Backend",
-        sectionType: "backend",
-        count: 2,
-        tools: [
-          { name: "Firebase", slug: "firebase" },
-          { name: "Node.js", slug: "nodedotjs" },
-        ],
-      },
-      {
-        name: "AI",
-        sectionType: "ai",
+        name: "Languages",
+        sectionType: "languages",
         count: 3,
         tools: [
-          { name: "Claude", slug: "claude" },
-          { name: "Copilot", slug: "githubcopilot" },
-          { name: "Cursor", slug: "cursor" },
+          { name: "Rust", slug: "rust" },
+          { name: "Go", slug: "go" },
+          { name: "TypeScript", slug: "typescript" },
         ],
+      },
+      {
+        name: "Tools",
+        sectionType: "tools",
+        count: 1,
+        tools: [{ name: "Git", slug: "git" }],
       },
     ],
   },
@@ -161,6 +174,11 @@ const SAMPLES: PileStack[] = [
 const SECTION_HUES: Record<string, number> = {
   frontend: 55,
   backend: 150,
+  deploy: 245,
+  payments: 305,
+  editor: 245,
+  languages: 305,
+  tools: 85,
   ide: 245,
   ai: 305,
   other: 85,
@@ -180,6 +198,11 @@ function openHeight(n: number) {
 function tossAngle(i: number, n: number) {
   if (n <= 1) return -3;
   return -6 + (12 * i) / (n - 1);
+}
+
+// Real X (Twitter) profile URL from a display handle like "@levelsio".
+function xProfileUrl(handle: string) {
+  return `https://x.com/${handle.replace(/^@/, "")}`;
 }
 
 // Self-hosted Brandfetch logo layered over a warm letter tile. A missing PNG
@@ -306,11 +329,27 @@ function SectionLayer({
 function PileCard({ stack }: { stack: PileStack }) {
   const [open, setOpen] = useState(false);
   const n = stack.sections.length;
+  const toggle = () => setOpen((v) => !v);
+
+  // Enter / Space toggle the card, matching native button semantics. Space is
+  // suppressed to stop the page from scrolling, then toggles.
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Enter" || e.key === " " || e.key === "Spacebar") {
+      e.preventDefault();
+      toggle();
+    }
+  };
 
   return (
     <div
       data-open={open}
-      className="commpile-card group rounded-[18px] border-[1.5px] border-foreground bg-[#FBF7F0] p-3.5 shadow-[0_5px_0_var(--foreground)] transition-shadow duration-200 hover:shadow-[0_7px_0_var(--foreground)]"
+      role="button"
+      tabIndex={0}
+      aria-expanded={open}
+      aria-label={`${stack.name} stack — ${open ? "collapse" : "expand"}`}
+      onClick={toggle}
+      onKeyDown={onKeyDown}
+      className="commpile-card group cursor-pointer rounded-[18px] border-[1.5px] border-foreground bg-[#FBF7F0] p-3.5 shadow-[0_5px_0_var(--foreground)] transition-shadow duration-200 hover:shadow-[0_7px_0_var(--foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#F6F1E8]"
     >
       {/* Header */}
       <div className="flex items-center gap-2.5">
@@ -323,20 +362,29 @@ function PileCard({ stack }: { stack: PileStack }) {
         </span>
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14.5px] font-extrabold text-foreground">
-            {stack.handle}
+            {stack.name}
           </div>
-          <div
-            className="truncate font-mono"
+          {/* @handle links to the person's real X profile. stopPropagation so
+              following the link never also toggles the pile. */}
+          <a
+            href={xProfileUrl(stack.handle)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="block truncate font-mono transition-colors hover:text-primary hover:underline"
             style={{ fontSize: 10, color: "#B4A78E" }}
           >
-            {stack.meta}
-          </div>
+            {stack.handle} · {stack.meta}
+          </a>
         </div>
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-label={open ? "Collapse stack" : "Expand stack"}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggle();
+          }}
+          tabIndex={-1}
+          aria-hidden
           className="flex flex-none items-center justify-center rounded-[9px] border border-[#E0D5BE] bg-card text-[#8A7B63] transition-colors hover:border-primary hover:text-primary group-data-[open=true]:border-primary group-data-[open=true]:bg-[#FEF3E7] group-data-[open=true]:text-primary"
           style={{ width: 30, height: 30 }}
         >
@@ -369,16 +417,16 @@ function PileCard({ stack }: { stack: PileStack }) {
           .reverse()}
       </div>
 
-      {/* Quote + footer */}
+      {/* Tagline + footer */}
       <span className="mt-1 block text-[12.5px] leading-relaxed text-[#8A7B63]">
-        {stack.quote}
+        {stack.tagline}
       </span>
       <div className="mt-3 flex items-center justify-between gap-3 border-t border-[#EDE4D2] pt-2.5">
         <span
           className="truncate font-mono"
           style={{ fontSize: 9, color: "#B4A78E" }}
         >
-          superstacks.dev/{stack.handle}
+          superstacks.dev/{stack.handle.replace(/^@/, "")}
         </span>
         <Logomark size={14} className="flex-none" />
       </div>
