@@ -1212,59 +1212,75 @@ function Sticker({
       s.shape === "circle" ? s.w : s.shape === "pill" ? s.h : s.w * 0.22,
   };
 
-  if (s.shape === "pill") {
+  const tool = {
+    toolId: s.toolId,
+    name: s.name,
+    logo: s.logoSrc,
+    letter: s.letter,
+  };
+
+  // The UPPERCASE name label, shared by the "both" and "name" modes. Centered
+  // and legible; padding keeps it clear of the pill's rounded ends.
+  const nameLabel = (
+    <div
+      style={scaleStyle(
+        {
+          display: "flex",
+          fontSize: 25,
+          fontWeight: 900,
+          letterSpacing: 0.5,
+          color: INK,
+          textAlign: "center",
+        },
+        k
+      )}
+    >
+      {s.name.toUpperCase()}
+    </div>
+  );
+
+  // The synthetic "+N MORE" overflow pill: orange mono name, never cyclable.
+  if (isMore) {
     return (
-      <div style={scaleStyle({ ...base, gap: 12 }, k)}>
-        {isMore ? (
-          <div
-            style={scaleStyle(
-              {
-                display: "flex",
-                fontFamily: fonts.mono,
-                fontSize: 21,
-                fontWeight: 700,
-                letterSpacing: 2,
-                color: ORANGE,
-              },
-              k
-            )}
-          >
-            {s.name}
-          </div>
-        ) : (
-          <>
-            <Logo
-              tool={{ toolId: s.toolId, name: s.name, logo: s.logoSrc, letter: s.letter }}
-              size={42}
-              k={k}
-            />
-            <div
-              style={scaleStyle(
-                {
-                  display: "flex",
-                  fontSize: 25,
-                  fontWeight: 900,
-                  letterSpacing: 0.5,
-                  color: INK,
-                },
-                k
-              )}
-            >
-              {s.name.toUpperCase()}
-            </div>
-          </>
-        )}
+      <div style={scaleStyle(base, k)}>
+        <div
+          style={scaleStyle(
+            {
+              display: "flex",
+              fontFamily: fonts.mono,
+              fontSize: 21,
+              fontWeight: 700,
+              letterSpacing: 2,
+              color: ORANGE,
+            },
+            k
+          )}
+        >
+          {s.name}
+        </div>
       </div>
     );
   }
 
+  // NAME — uppercase name only, no logo (pill).
+  if (s.mode === "name") {
+    return <div style={scaleStyle(base, k)}>{nameLabel}</div>;
+  }
+
+  // BOTH — logo + uppercase name (pill).
+  if (s.mode === "both") {
+    return (
+      <div style={scaleStyle({ ...base, gap: 12 }, k)}>
+        <Logo tool={tool} size={42} k={k} />
+        {nameLabel}
+      </div>
+    );
+  }
+
+  // LOGO — logo centered only (circle/square).
   return (
     <div style={scaleStyle(base, k)}>
-      <Logo
-        tool={{ toolId: s.toolId, name: s.name, logo: s.logoSrc, letter: s.letter }}
-        size={Math.round(s.w * 0.54)}
-        k={k}
-      />
+      <Logo tool={tool} size={Math.round(s.w * 0.54)} k={k} />
     </div>
   );
 }

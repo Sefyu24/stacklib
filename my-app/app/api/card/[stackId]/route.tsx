@@ -150,6 +150,7 @@ export async function GET(
       lidEdition: stack.lidEdition,
       stickerSeed: stack.stickerSeed,
       stickerPositions: stack.stickerPositions,
+      stickerModes: stack.stickerModes,
     },
     (t) => logoByToolId.get(t.toolId) ?? null,
     avatarSrc

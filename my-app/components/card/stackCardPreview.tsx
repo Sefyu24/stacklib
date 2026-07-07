@@ -62,6 +62,7 @@ export default function StackCardPreview({
 
   const setLidOptionsMutation = useMutation(api.stacks.setLidOptions);
   const setStickerPositionMutation = useMutation(api.stacks.setStickerPosition);
+  const setStickerModeMutation = useMutation(api.stacks.setStickerMode);
 
   // Lid state, optimistic-first: local values render immediately, the
   // mutations persist them, and the query round-trip settles on the same
@@ -83,11 +84,21 @@ export default function StackCardPreview({
     string,
     { x: number; y: number }
   > | null>(null);
+  // Same optimistic pattern for per-sticker display modes: local override
+  // renders instantly, setStickerMode persists, and the query round-trip
+  // settles on the same map.
+  const [localModes, setLocalModes] = useState<Record<string, string> | null>(
+    null
+  );
 
   const seed = localSeed ?? stack.stickerSeed ?? 1;
   const positions = useMemo(
     () => localPositions ?? stack.stickerPositions ?? {},
     [localPositions, stack.stickerPositions]
+  );
+  const modes = useMemo(
+    () => localModes ?? stack.stickerModes ?? {},
+    [localModes, stack.stickerModes]
   );
 
   // The preview renders the SAME 1200x630 art the PNG route rasterizes —
@@ -108,13 +119,14 @@ export default function StackCardPreview({
           lidEdition: edition,
           stickerSeed: seed,
           stickerPositions: positions,
+          stickerModes: modes,
         },
         // png:true skips expiring Brandfetch URLs, exactly like the PNG
         // route, so both fall back to the same letter-tiles.
         (t) => toolLogoUrl(t, { png: true }),
         stack.authorAvatarUrl || null
       ),
-    [stack, theme, edition, seed, positions]
+    [stack, theme, edition, seed, positions, modes]
   );
 
   const isLid = theme === "lid";
@@ -166,6 +178,30 @@ export default function StackCardPreview({
       }).catch(() => toast.error("Couldn't save the sticker position"));
     },
     [stack.stickerPositions, stackId, setStickerPositionMutation]
+  );
+
+  // Double-click / double-tap cycles a sticker's display mode
+  // logo -> both -> name -> logo. The starting point is whatever the sticker
+  // currently renders as (resolved layout mode), so the cycle always advances
+  // from what the user sees, defaults included.
+  const handleCycleMode = useCallback(
+    (toolId: string) => {
+      const NEXT: Record<string, "logo" | "both" | "name"> = {
+        logo: "both",
+        both: "name",
+        name: "logo",
+      };
+      const current = stickers.find((s) => s.toolId === toolId)?.mode ?? "logo";
+      const next = NEXT[current] ?? "logo";
+      setLocalModes((prev) => ({
+        ...(prev ?? stack.stickerModes ?? {}),
+        [toolId]: next,
+      }));
+      setStickerModeMutation({ stackId, toolId, mode: next }).catch(() =>
+        toast.error("Couldn't save the sticker style")
+      );
+    },
+    [stickers, stack.stickerModes, stackId, setStickerModeMutation]
   );
 
   // Shuffle = new seed + every sticker re-anchored to the NEW default
@@ -318,6 +354,7 @@ export default function StackCardPreview({
                 scale={scale}
                 onDragMove={handleDragMove}
                 onDragEnd={handleDragEnd}
+                onCycleMode={handleCycleMode}
               />
             )}
           </>
@@ -326,7 +363,7 @@ export default function StackCardPreview({
 
       {isLid && stickers.length > 0 && (
         <p className="-mt-1 text-center text-[12px] text-[#B4A78E]">
-          drag the stickers to rearrange
+          drag the stickers to rearrange · double-tap to toggle logo / name
         </p>
       )}
 
