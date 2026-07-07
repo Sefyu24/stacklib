@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useClerk, useUser } from "@clerk/nextjs";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
@@ -19,6 +19,7 @@ import { convexErrorMessage } from "@/components/dashboard/profileSection";
  */
 export default function GithubCard() {
   const { user } = useUser();
+  const { openUserProfile } = useClerk();
   const ownerId = user?.id;
   const { isAuthenticated } = useConvexAuth();
 
@@ -28,7 +29,6 @@ export default function GithubCard() {
   );
   const upsertProfile = useMutation(api.profiles.upsertProfile);
 
-  const [linking, setLinking] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const githubAccount = user?.externalAccounts.find(
@@ -40,26 +40,12 @@ export default function GithubCard() {
     !!githubUsername &&
     profile.githubUsername === githubUsername;
 
-  async function handleLink() {
-    if (!user) return;
-    setLinking(true);
-    try {
-      const externalAccount = await user.createExternalAccount({
-        strategy: "oauth_github",
-        redirectUrl: window.location.href,
-      });
-      const url =
-        externalAccount.verification?.externalVerificationRedirectURL;
-      if (!url) {
-        throw new Error("Missing verification redirect URL");
-      }
-      window.location.href = url.toString();
-    } catch {
-      setLinking(false);
-      toast.error(
-        "Couldn't start the GitHub connection. It may need to be enabled in the Clerk dashboard (SSO connections → GitHub)."
-      );
-    }
+  // Open Clerk's account portal on the connected-accounts panel. This is the
+  // built-in, reliable "Connect account" flow — it always opens (no silent
+  // async that can fail), and once GitHub is connected the `user` object
+  // reloads so `githubUsername` fills in and this card flips to "Connected".
+  function handleLink() {
+    openUserProfile();
   }
 
   async function handleSaveToProfile() {
@@ -128,13 +114,8 @@ export default function GithubCard() {
             </Button>
           )
         ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLink}
-            disabled={linking}
-          >
-            {linking ? "Opening GitHub…" : "Link GitHub"}
+          <Button variant="outline" size="sm" onClick={handleLink}>
+            Link GitHub
           </Button>
         )}
       </div>

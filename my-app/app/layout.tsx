@@ -27,7 +27,7 @@ const ebGaramond = EB_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "Superstacks — Share your tech stack",
+  title: "Superstacks · Share your tech stack",
   description:
     "Build your tech stack, get a clean social card, and share it anywhere.",
 };

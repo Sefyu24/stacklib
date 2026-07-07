@@ -94,7 +94,7 @@ export default function BrowseFilter({
               // matches on the value we pass (name + category label).
             >
               <CommandInput
-                placeholder="Search tools — React, Convex…"
+                placeholder="Search tools: React, Convex…"
                 className="text-[14px]"
               />
               <CommandList className="max-h-[280px]">

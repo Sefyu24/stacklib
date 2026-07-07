@@ -7,7 +7,7 @@ import BrowseFeed from "@/components/browse/browseFeed";
 import type { StackPileStack } from "@/components/browse/stackPile";
 
 export const metadata: Metadata = {
-  title: "Browse stacks — Superstacks",
+  title: "Browse stacks · Superstacks",
   description:
     "Discover public tech stacks from indie hackers, teams, and students. See what they ship with.",
 };
@@ -49,7 +49,7 @@ export default async function BrowsePage() {
               Browse stacks
             </h1>
             <p className="mt-1 max-w-[52ch] text-[15px] leading-relaxed text-[#8A7B63]">
-              Public cards from the community — see what people ship with,
+              Public cards from the community. See what people ship with,
               then remix it into your own.
             </p>
           </div>

@@ -21,7 +21,6 @@ import {
   CardRenderTool,
   getIdentityLayout,
   getStickerLayout,
-  LID_CAPTION_H,
   LID_MARK_CX,
   LID_MARK_CY,
   LidEdition,
@@ -88,14 +87,15 @@ const FETCH_PALETTE = [
   "#35291A",
 ];
 
-// Lid edition finishes.
+// Lid edition finishes. Mark sizes follow the 6a mock (46/44/48 at 2.25x;
+// microsoft's markSize is its four-square grid footprint: 2x45px + 9px gap).
 const LID_FINISH: Record<
   LidEdition,
   { bg: string; shadow: number; caption: string; markSize: number; markColor: string }
 > = {
-  apple: { bg: "#33302B", shadow: 0.35, caption: "#6B6459", markSize: 150, markColor: "#C9C2B6" },
-  microsoft: { bg: "#D8D3CA", shadow: 0.22, caption: "#8A857C", markSize: 132, markColor: "#8A857C" },
-  linux: { bg: "#16110B", shadow: 0.45, caption: "#6B5D46", markSize: 155, markColor: "#F0E6D2" },
+  apple: { bg: "#33302B", shadow: 0.35, caption: "#6B6459", markSize: 104, markColor: "#C9C2B6" },
+  microsoft: { bg: "#D8D3CA", shadow: 0.22, caption: "#8A857C", markSize: 99, markColor: "#8A857C" },
+  linux: { bg: "#16110B", shadow: 0.45, caption: "#6B5D46", markSize: 108, markColor: "#F0E6D2" },
 };
 
 // ---------------------------------------------------------------------------
@@ -777,7 +777,7 @@ function TerminalCard({ data, fonts, k }: ThemeProps) {
               k
             )}
           >
-            # no tools yet — add some to build your stack
+            # no tools yet, add some to build your stack
           </div>
         ) : (
           <div
@@ -1015,7 +1015,7 @@ function SpecLine({
 function LidCard({ data, fonts, k }: ThemeProps) {
   const edition = data.lidEdition;
   const fin = LID_FINISH[edition];
-    const stickers = getStickerLayout(data);
+  const stickers = getStickerLayout(data);
   const identity = getIdentityLayout(data);
 
   const caption = `${
@@ -1035,13 +1035,13 @@ function LidCard({ data, fonts, k }: ThemeProps) {
           width: "100%",
           height: "100%",
           background: fin.bg,
-          borderRadius: 40,
+          borderRadius: 50,
           overflow: "hidden",
         },
         k
       )}
     >
-      {/* center OS mark at (50%, 47%) */}
+      {/* center OS mark at (50%, ~46%) */}
       {edition === "microsoft" ? (
         <div
           style={scaleStyle(
@@ -1049,11 +1049,11 @@ function LidCard({ data, fonts, k }: ThemeProps) {
               display: "flex",
               flexWrap: "wrap",
               position: "absolute",
-              width: 132,
-              height: 132,
-              gap: 12,
-              left: LID_MARK_CX - 66,
-              top: LID_MARK_CY - 66,
+              width: 99,
+              height: 99,
+              gap: 9,
+              left: LID_MARK_CX - 49.5,
+              top: LID_MARK_CY - 49.5,
             },
             k
           )}
@@ -1062,7 +1062,7 @@ function LidCard({ data, fonts, k }: ThemeProps) {
             <div
               key={c}
               style={scaleStyle(
-                { display: "flex", width: 60, height: 60, background: c },
+                { display: "flex", width: 45, height: 45, background: c },
                 k
               )}
             />
@@ -1091,7 +1091,7 @@ function LidCard({ data, fonts, k }: ThemeProps) {
         <Sticker key={s.toolId} s={s} fonts={fonts} k={k} shadow={hardShadow} />
       ))}
 
-      {/* identity sticker — always on top so it stays legible */}
+      {/* identity name-tag — compact, upper-left-of-center, always on top */}
       <div
         style={scaleStyle(
           {
@@ -1099,7 +1099,7 @@ function LidCard({ data, fonts, k }: ThemeProps) {
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            gap: 10,
+            gap: 5,
             position: "absolute",
             left: stickerLeft(identity.x, identity.w),
             top: stickerTop(identity.y, identity.h),
@@ -1107,8 +1107,9 @@ function LidCard({ data, fonts, k }: ThemeProps) {
             height: identity.h,
             background: "#FFFDF8",
             border: `2.5px solid ${INK}`,
-            borderRadius: 26,
+            borderRadius: 20,
             boxShadow: hardShadow,
+            transform: "rotate(-3deg)",
           },
           k
         )}
@@ -1118,9 +1119,9 @@ function LidCard({ data, fonts, k }: ThemeProps) {
             {
               display: "flex",
               fontFamily: fonts.mono,
-              fontSize: 17,
+              fontSize: 15,
               fontWeight: 700,
-              letterSpacing: 6,
+              letterSpacing: 3.3,
               color: TAUPE,
             },
             k
@@ -1132,9 +1133,9 @@ function LidCard({ data, fonts, k }: ThemeProps) {
           style={scaleStyle(
             {
               display: "flex",
-              fontSize: 40,
+              fontSize: 32,
               fontWeight: 900,
-              letterSpacing: -1,
+              letterSpacing: -0.32,
               color: INK,
             },
             k
@@ -1144,7 +1145,7 @@ function LidCard({ data, fonts, k }: ThemeProps) {
         </div>
       </div>
 
-      {/* caption band */}
+      {/* caption fine print */}
       <div
         style={scaleStyle(
           {
@@ -1152,14 +1153,13 @@ function LidCard({ data, fonts, k }: ThemeProps) {
             position: "absolute",
             left: 0,
             right: 0,
-            bottom: 0,
-            height: LID_CAPTION_H,
+            bottom: 18,
             alignItems: "center",
             justifyContent: "center",
             fontFamily: fonts.mono,
-            fontSize: 19,
+            fontSize: 17,
             fontWeight: 700,
-            letterSpacing: 4,
+            letterSpacing: 3,
             color: fin.caption,
           },
           k
@@ -1220,13 +1220,13 @@ function Sticker({
   };
 
   // The UPPERCASE name label, shared by the "both" and "name" modes. Centered
-  // and legible; padding keeps it clear of the pill's rounded ends.
+  // and legible; sizing matches the 6a mock's pill type (9.5px at 2.25x).
   const nameLabel = (
     <div
       style={scaleStyle(
         {
           display: "flex",
-          fontSize: 25,
+          fontSize: 21,
           fontWeight: 900,
           letterSpacing: 0.5,
           color: INK,
@@ -1267,11 +1267,11 @@ function Sticker({
     return <div style={scaleStyle(base, k)}>{nameLabel}</div>;
   }
 
-  // BOTH — logo + uppercase name (pill).
+  // BOTH — logo + uppercase name (pill, 17px icon at 2.25x = 38).
   if (s.mode === "both") {
     return (
-      <div style={scaleStyle({ ...base, gap: 12 }, k)}>
-        <Logo tool={tool} size={42} k={k} />
+      <div style={scaleStyle({ ...base, gap: 10 }, k)}>
+        <Logo tool={tool} size={38} k={k} />
         {nameLabel}
       </div>
     );

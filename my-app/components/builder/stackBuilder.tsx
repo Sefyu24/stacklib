@@ -378,7 +378,7 @@ export default function StackBuilder({ stackId }: StackBuilderProps) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               onBlur={commitDescription}
-              placeholder="Tell people about this stack — what it's for, why you chose these tools… (shown on the card's page, not the card image)"
+              placeholder="Tell people about this stack: what it's for, why you chose these tools… (shown on the card's page, not the card image)"
               aria-label="Card description"
               className="min-h-[84px] resize-y bg-white text-[13.5px]"
             />
@@ -497,8 +497,8 @@ export default function StackBuilder({ stackId }: StackBuilderProps) {
                     {!isSignedIn
                       ? "Sign in to publish this card to your profile."
                       : isPublic
-                        ? "Public — anyone can find it on your profile."
-                        : "Private — only you can see it."}
+                        ? "Public. Anyone can find it on your profile."
+                        : "Private. Only you can see it."}
                   </p>
                 </div>
               </div>

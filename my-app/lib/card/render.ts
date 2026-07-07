@@ -157,26 +157,29 @@ export function buildCardRenderData(
 }
 
 // ===========================================================================
-// LID sticker layout engine
+// LID sticker layout engine — design "6a Lid editions"
 // ===========================================================================
 //
 // Everything below is PURE and DETERMINISTIC: same data in, same layout out,
-// in the browser preview and in satori alike. No Math.random, no Date.now —
-// all randomness flows from mulberry32 seeded by
-//   stickerSeed ^ fnv1a(toolId)
-// so a sticker's look (shape / size / rotation) is a function of the tool
-// alone and NEVER changes when it (or any other sticker) is dragged.
+// in the browser preview and in satori alike. No Math.random, no Date.now.
+//
+// Unlike the old seeded scatter, the default composition is HAND-CURATED: a
+// fixed template of 11 sticker slots (plus the identity name-tag) taken from
+// the approved 360x280 design mock. Tools are assigned to slots by a stable
+// greedy fill; changing `stickerSeed` applies a seeded permutation of that
+// assignment plus a tiny jitter (mulberry32) — alive, never chaotic.
 
 /** The lid canvas the normalized sticker coordinates map onto (1x px). */
 export const LID_W = 1200;
 export const LID_H = 630;
-/** Bottom caption band height — stickers never enter it. */
-export const LID_CAPTION_H = 92;
-/** Center OS mark anchor: (50%, 47%) of the lid. */
+/** Bottom caption zone height — the fine print lives here, stickers don't. */
+export const LID_CAPTION_H = 58;
+/** Center OS mark anchor: (50%, ~46%) of the lid. */
 export const LID_MARK_CX = LID_W / 2;
-export const LID_MARK_CY = LID_H * 0.47;
-/** Hard cap of tool stickers on the lid; the rest fold into one "+N MORE". */
-export const MAX_LID_STICKERS = 14;
+export const LID_MARK_CY = LID_H * 0.46;
+/** Hard cap of tool stickers on the lid (one per template slot); the rest
+ *  fold into one "+N MORE". */
+export const MAX_LID_STICKERS = 11;
 /** Synthetic toolId of the overflow pill sticker. */
 export const OVERFLOW_STICKER_ID = "__overflow";
 
@@ -280,18 +283,23 @@ export interface LidIdentityLayout {
 }
 
 /**
- * The identity sticker's default box (top-center). Exported so the scatter
- * and the preview drag layer share one geometry.
+ * The identity name-tag's default box — compact, upper-left-of-center, as
+ * placed in the 6a mock (left 118, top 54 of 360x280). Horizontally the box
+ * is CENTER-anchored on the mock tag's center so longer names grow outward
+ * and the tag stays left-of-center. Exported so the lid renderer and any
+ * future proxy share one geometry.
  */
 export function getIdentityLayout(data: CardRenderData): LidIdentityLayout {
   const raw = data.handleText ?? data.authorName ?? data.stackName;
   const name = truncate(raw, 20);
-  // Archivo 900 at 40px averages ~25px/char; padded and clamped.
-  const w = Math.min(620, Math.max(280, Math.round(name.length * 25) + 110));
-  const h = 124;
+  // Archivo 900 at 32px averages ~19px/char, plus 31px pill padding per side.
+  const w = Math.min(620, Math.max(170, Math.round(name.length * 19) + 62));
+  const h = 78;
+  // Mock tag center x ≈ 158/360 of the lid; top = 54 * 2.25 = 121.5.
+  const left = LID_W * (158 / 360) - w / 2;
   return {
-    x: 0.5,
-    y: stickerYFromTop(40, h),
+    x: stickerXFromLeft(left, w),
+    y: stickerYFromTop(121.5, h),
     w,
     h,
     label: "STACK OF",
@@ -299,65 +307,102 @@ export function getIdentityLayout(data: CardRenderData): LidIdentityLayout {
   };
 }
 
-// Per-tool look: consumed rng calls are in a fixed order so the result is a
-// stable function of (seed, toolId). `modeOverride` (a user choice via
-// double-click, not seeded) picks what the sticker shows; rotation is drawn
-// before the mode branch so it stays stable when the mode changes.
-function stickerLook(
-  rng: () => number,
-  name: string,
-  modeOverride: string | undefined
-): {
+// ---------------------------------------------------------------------------
+// The 6a slot template. Mock coordinates (360x280 card) are normalized with
+// the same mapping the drag layer uses — x = left/(360 - w), y = top/(280 - h)
+// — and sizes are scaled by the height ratio 630/280 = 2.25. A slot fixes
+// position + rotation and offers two size hints: `d` (circle/square diameter)
+// and `pillH` (pill height). The tool's display MODE picks which applies.
+
+interface LidSlot {
+  /** Normalized position (the standard sticker mapping) */
+  x: number;
+  y: number;
+  /** Template shape (a mode-mismatched tool keeps the position anyway) */
   shape: LidStickerShape;
-  mode: "logo" | "both" | "name";
-  w: number;
-  h: number;
-  rotation: number;
-} {
-  const rPill = rng();
-  const rShape = rng();
-  const rSize = rng();
-  const rRot = rng();
-  const rotation = Math.round((rRot * 16 - 8) * 10) / 10;
+  /** Circle/square diameter hint, 1x px */
+  d: number;
+  /** Pill height hint, 1x px */
+  pillH: number;
+  /** Degrees — slot-derived, stable regardless of drag */
+  rot: number;
+}
 
-  // Default preserves the original look: short names get a name+logo pill,
-  // everything else is a logo-only circle/square.
-  const defaultMode: "logo" | "both" =
-    name.length <= 9 && rPill < 0.4 ? "both" : "logo";
-  const mode: "logo" | "both" | "name" =
-    modeOverride === "logo" ||
-    modeOverride === "both" ||
-    modeOverride === "name"
-      ? modeOverride
-      : defaultMode;
+function slot(
+  shape: LidStickerShape,
+  left: number,
+  top: number,
+  wMock: number,
+  hMock: number,
+  d: number,
+  pillH: number,
+  rot: number
+): LidSlot {
+  return {
+    shape,
+    x: left / (360 - wMock),
+    y: top / (280 - hMock),
+    d,
+    pillH,
+    rot,
+  };
+}
 
-  if (mode === "name") {
-    const w = Math.round(name.length * 17 + 52);
-    return { shape: "pill", mode, w, h: 72, rotation };
-  }
-  if (mode === "both") {
-    const w = Math.round(44 + 14 + name.length * 16.5 + 48);
-    return { shape: "pill", mode, w, h: 88, rotation };
-  }
-  if (rShape < 0.55) {
-    const d = Math.round(132 + rSize * 44); // 132–176
-    return { shape: "circle", mode, w: d, h: d, rotation };
-  }
-  const s = Math.round(122 + rSize * 40); // 122–162
-  return { shape: "square", mode, w: s, h: s, rotation };
+/** The 11 tool slots of design 6a, in the mock's numbering (slot 5 is the
+ *  identity name-tag, handled by getIdentityLayout). Pill slots carry a
+ *  nominal mock width (their drawn size in the design) for normalization. */
+const LID_SLOTS: LidSlot[] = [
+  slot("circle", 16, 14, 58, 58, 130, 72, -8), // 1  top-left
+  // Slot 2's diameter hint is smaller: a full-size circle on this pill slot
+  // would dip under the identity name-tag right below it.
+  slot("pill", 92, 12, 112, 32, 96, 72, 4), //    2  top, left of center
+  slot("circle", 226, 10, 46, 46, 104, 72, 7), // 3  top, right of center
+  slot("circle", 288, 38, 60, 60, 135, 72, -6), //4  top-right
+  slot("square", 14, 90, 52, 52, 117, 72, 6), //  6  mid-left
+  slot("pill", 20, 168, 104, 32, 110, 72, -5), // 7  lower-left
+  slot("square", 294, 118, 52, 52, 117, 72, 8), //8  mid-right
+  slot("pill", 286, 190, 64, 30, 110, 68, -7), // 9  lower-right
+  slot("circle", 142, 200, 52, 52, 117, 72, 5), //10 bottom, left of center
+  slot("square", 214, 206, 48, 48, 108, 72, -4), //11 bottom, right of center
+  slot("pill", 54, 222, 96, 32, 110, 72, 3), //   12 bottom-left
+];
+
+/** Balanced fill order (design slots 1,4,11,7,3,9,6,12,2,8,10 as indices into
+ *  LID_SLOTS) so small stacks stay spread around the OS mark. */
+const LID_SLOT_FILL_ORDER = [0, 3, 9, 5, 2, 7, 4, 10, 1, 6, 8];
+
+/** Indices of the pill-shaped template slots (design slots 2, 7, 9, 12). */
+const isPillSlot = (s: LidSlot) => s.shape === "pill";
+
+/** 12th spot for the "+N MORE" pill when every tool slot is taken: the open
+ *  pocket left of the OS mark (midpoint-ish between slots 6 and 11 in the
+ *  mock, nudged clear of the mark). Deterministic, part of the template. */
+const LID_OVERFLOW_SLOT: LidSlot = slot("pill", 100, 158, 70, 30, 110, 68, -5);
+
+// Pill sizing (1x px): height comes from the slot; width from the name.
+// Archivo 900 uppercase at 21px runs ~15.5px/char; 28px pill padding/side,
+// plus a 38px logo + 10px gap when the logo shows.
+function pillWidth(name: string, mode: "both" | "name"): number {
+  const text = Math.round(name.length * 15.5);
+  return mode === "both" ? text + 104 : text + 56;
 }
 
 /**
  * The lid's sticker layout: every card tool (same display selection as the
  * other themes) capped at MAX_LID_STICKERS, plus one "+N MORE" pill when
- * tools overflow. Look comes from the per-tool hash; position comes from
- * data.stickerPositions[toolId] when the user dragged it, otherwise from a
- * deterministic seeded scatter that avoids the center OS mark, the identity
- * sticker and the caption band (with a few relaxation passes to reduce
- * sticker-on-sticker overlap).
+ * tools overflow. Position + rotation + size hint come from the curated 6a
+ * slot template; shape + content come from the tool's display mode (user
+ * override via double-tap, else the seeded per-tool default).
  *
- * The default scatter intentionally ignores stored positions: it is a pure
- * function of (tool set, seed), so dragging one sticker never moves another.
+ * Assignment is deterministic. Seed 1 (the default) is the curated fill:
+ * tools in card order take slots in the balanced fill order, except pill
+ * slots grab the next pill-rendering tool so name pills land where the
+ * design drew pills. Any other seed = a mulberry32(seed) permutation of that
+ * tool->slot assignment plus a tiny jitter (±1.5% position, ±2° rotation).
+ *
+ * The default layout intentionally ignores stored positions: it is a pure
+ * function of (tool set, modes, seed), so dragging one sticker never moves
+ * another. Stored positions override at the end; rotation stays slot-derived.
  */
 export function getStickerLayout(data: CardRenderData): LidSticker[] {
   const seed = (data.stickerSeed ?? 1) >>> 0;
@@ -365,32 +410,104 @@ export function getStickerLayout(data: CardRenderData): LidSticker[] {
   const shown = all.slice(0, MAX_LID_STICKERS);
   const extra = data.overflow + (all.length - shown.length);
 
-  type Item = LidSticker & { left: number; top: number; rEff: number };
+  // 1. Resolve each tool's display mode (user override first, else the
+  //    seeded default: short names sometimes render as logo+name pills) and
+  //    its logo-mode shape. Per-tool streams keyed by (seed, toolId), so a
+  //    tool's look never depends on its neighbors or its position.
+  const resolved = shown.map((t) => {
+    const rng = mulberry32((seed ^ hashString(t.toolId)) >>> 0);
+    const rPill = rng();
+    const rShape = rng();
+    const o = data.stickerModes[t.toolId];
+    const defaultMode: "logo" | "both" =
+      t.name.length <= 9 && rPill < 0.4 ? "both" : "logo";
+    const mode: "logo" | "both" | "name" =
+      o === "logo" || o === "both" || o === "name" ? o : defaultMode;
+    const logoShape: LidStickerShape = rShape < 0.55 ? "circle" : "square";
+    return { tool: t, mode, logoShape };
+  });
 
-  const items: Item[] = shown.map((t) => {
-    const look = stickerLook(
-      mulberry32((seed ^ hashString(t.toolId)) >>> 0),
-      t.name,
-      data.stickerModes[t.toolId]
-    );
+  // 2. Stable greedy slot assignment over the first N slots in fill order:
+  //    pill slots prefer the next unplaced pill-rendering tool; everything
+  //    else takes the next tool in card order.
+  const slotFor: LidSlot[] = new Array(resolved.length);
+  const placed: boolean[] = new Array(resolved.length).fill(false);
+  const inPlay = LID_SLOT_FILL_ORDER.slice(
+    0,
+    Math.min(resolved.length, LID_SLOTS.length)
+  );
+  for (const si of inPlay) {
+    const s = LID_SLOTS[si];
+    let pick = -1;
+    if (isPillSlot(s)) {
+      pick = resolved.findIndex((r, i) => !placed[i] && r.mode !== "logo");
+    }
+    if (pick < 0) pick = placed.indexOf(false);
+    if (pick < 0) break;
+    placed[pick] = true;
+    slotFor[pick] = s;
+  }
+
+  // 3. Shuffle: any non-default seed permutes the assignment and draws a
+  //    per-sticker jitter (overflow pill included, last in the stream).
+  const jitter: { dx: number; dy: number; dr: number }[] = [];
+  if (seed !== 1) {
+    const rng = mulberry32(seed);
+    for (let i = slotFor.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const tmp = slotFor[i];
+      slotFor[i] = slotFor[j];
+      slotFor[j] = tmp;
+    }
+    for (let i = 0; i <= resolved.length; i++) {
+      jitter.push({
+        dx: (rng() * 2 - 1) * 0.015,
+        dy: (rng() * 2 - 1) * 0.015,
+        dr: Math.round((rng() * 2 - 1) * 2 * 10) / 10,
+      });
+    }
+  }
+
+  // 4. Slot + mode -> concrete sticker geometry.
+  const items: LidSticker[] = resolved.map((r, i) => {
+    const s = slotFor[i];
+    const j = jitter[i];
+    let shape: LidStickerShape;
+    let w: number;
+    let h: number;
+    if (r.mode === "both" || r.mode === "name") {
+      shape = "pill";
+      h = s.pillH;
+      w = pillWidth(r.tool.name, r.mode);
+    } else {
+      shape = isPillSlot(s) ? r.logoShape : s.shape;
+      w = s.d;
+      h = s.d;
+    }
     return {
-      toolId: t.toolId,
-      name: t.name,
-      logoSrc: t.logo,
-      letter: t.letter,
-      ...look,
-      x: 0,
-      y: 0,
-      left: 0,
-      top: 0,
-      rEff: (look.w + look.h) / 4,
+      toolId: r.tool.toolId,
+      name: r.tool.name,
+      logoSrc: r.tool.logo,
+      letter: r.tool.letter,
+      shape,
+      mode: r.mode,
+      w,
+      h,
+      rotation: Math.round((s.rot + (j?.dr ?? 0)) * 10) / 10,
+      x: clamp01(s.x + (j?.dx ?? 0)),
+      y: clamp01(s.y + (j?.dy ?? 0)),
     };
   });
 
+  // 5. The "+N MORE" pill takes the next unfilled slot, or the dedicated
+  //    overflow pocket when all 11 tool slots are in use.
   if (extra > 0) {
     const name = `+${extra} MORE`;
-    const rng = mulberry32((seed ^ hashString(OVERFLOW_STICKER_ID)) >>> 0);
-    const w = Math.round(name.length * 15 + 64);
+    const s =
+      resolved.length < LID_SLOTS.length
+        ? LID_SLOTS[LID_SLOT_FILL_ORDER[resolved.length]]
+        : LID_OVERFLOW_SLOT;
+    const j = jitter[resolved.length];
     items.push({
       toolId: OVERFLOW_STICKER_ID,
       name,
@@ -398,109 +515,17 @@ export function getStickerLayout(data: CardRenderData): LidSticker[] {
       letter: "+",
       shape: "pill",
       mode: "name",
-      w,
-      h: 66,
-      rotation: Math.round((rng() * 16 - 8) * 10) / 10,
-      x: 0,
-      y: 0,
-      left: 0,
-      top: 0,
-      rEff: (w + 66) / 4,
+      w: Math.round(name.length * 15) + 60,
+      h: 68,
+      rotation: Math.round((s.rot + (j?.dr ?? 0)) * 10) / 10,
+      x: clamp01(s.x + (j?.dx ?? 0)),
+      y: clamp01(s.y + (j?.dy ?? 0)),
     });
   }
 
-  // --- default scatter -----------------------------------------------------
-  const identity = getIdentityLayout(data);
-  const idLeft = stickerLeft(identity.x, identity.w) - 14;
-  const idTop = stickerTop(identity.y, identity.h) - 14;
-  const idRight = idLeft + identity.w + 28;
-  const idBottom = idTop + identity.h + 28;
-
-  const EDGE = 10;
-  const capTop = LID_H - LID_CAPTION_H; // stickers stay above the caption band
-
-  // Initial position from a per-tool stream (independent of the look stream)
-  // so adding/removing one tool doesn't reshuffle the others.
-  for (let i = 0; i < items.length; i++) {
-    const it = items[i];
-    const rng = mulberry32((seed ^ hashString(it.toolId) ^ 0x9e3779b9) >>> 0);
-    it.left = EDGE + rng() * (LID_W - it.w - EDGE * 2);
-    it.top = EDGE + rng() * (capTop - it.h - EDGE * 2);
-  }
-
-  const clampItem = (it: Item) => {
-    it.left = Math.min(Math.max(it.left, EDGE), LID_W - it.w - EDGE);
-    it.top = Math.min(Math.max(it.top, EDGE), capTop - it.h - EDGE);
-  };
-
-  for (let iter = 0; iter < 60; iter++) {
-    for (let i = 0; i < items.length; i++) {
-      const a = items[i];
-      const acx = a.left + a.w / 2;
-      const acy = a.top + a.h / 2;
-
-      // (a) keep clear of the center OS mark disc
-      const minMark = 108 + a.rEff * 0.9;
-      let dx = acx - LID_MARK_CX;
-      let dy = acy - LID_MARK_CY;
-      let dist = Math.hypot(dx, dy);
-      if (dist < minMark) {
-        if (dist < 1e-6) {
-          // deterministic escape direction (golden-angle by index)
-          const ang = i * 2.399963229728653;
-          dx = Math.cos(ang);
-          dy = Math.sin(ang);
-          dist = 1;
-        }
-        const push = (minMark - dist) / dist;
-        a.left += dx * push;
-        a.top += dy * push;
-      }
-
-      // (b) keep clear of the identity sticker box
-      const overX =
-        Math.min(a.left + a.w, idRight) - Math.max(a.left, idLeft);
-      const overY =
-        Math.min(a.top + a.h, idBottom) - Math.max(a.top, idTop);
-      if (overX > 0 && overY > 0) {
-        if (overX < overY) {
-          a.left += acx < (idLeft + idRight) / 2 ? -overX : overX;
-        } else {
-          a.top += acy < (idTop + idBottom) / 2 ? -overY : overY;
-        }
-      }
-
-      // (c) relax sticker-on-sticker overlap (reduce, not eliminate —
-      // sticker-bomb overlap is part of the look)
-      for (let j = i + 1; j < items.length; j++) {
-        const b = items[j];
-        let ddx = acx - (b.left + b.w / 2);
-        let ddy = acy - (b.top + b.h / 2);
-        let d = Math.hypot(ddx, ddy);
-        const minD = (a.rEff + b.rEff) * 0.9;
-        if (d < minD) {
-          if (d < 1e-6) {
-            const ang = (i * 31 + j * 17) * 0.7;
-            ddx = Math.cos(ang);
-            ddy = Math.sin(ang);
-            d = 1;
-          }
-          const push = ((minD - d) / d) * 0.5;
-          a.left += ddx * push;
-          a.top += ddy * push;
-          b.left -= ddx * push;
-          b.top -= ddy * push;
-        }
-      }
-
-      clampItem(a);
-    }
-  }
-
-  // px -> normalized, then stored user positions override the defaults.
+  // 6. Stored user positions override the defaults — position only, never
+  //    rotation/shape, and never any other sticker.
   for (const it of items) {
-    it.x = stickerXFromLeft(it.left, it.w);
-    it.y = stickerYFromTop(it.top, it.h);
     const stored = data.stickerPositions[it.toolId];
     if (stored) {
       it.x = clamp01(stored.x);
@@ -508,5 +533,5 @@ export function getStickerLayout(data: CardRenderData): LidSticker[] {
     }
   }
 
-  return items.map(({ left: _l, top: _t, rEff: _r, ...pub }) => pub);
+  return items;
 }

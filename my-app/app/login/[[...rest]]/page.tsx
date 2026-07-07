@@ -5,10 +5,10 @@ export default function LoginPage() {
   return (
     <AuthShell
       headline="Welcome back."
-      subtitle="Your stacks missed you — sign in and pick up where you left off."
+      subtitle="Sign in and pick up right where you left off."
       footer={
         <>
-          superstacks.dev/<span className="text-primary">you</span> — still
+          superstacks.dev/<span className="text-primary">you</span>, still
           yours
         </>
       }

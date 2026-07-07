@@ -110,7 +110,7 @@ export default function BrowseFeed({
           ) : (
             <>
               <p className="text-[15px] text-[#8A7B63]">
-                No public stacks yet — yours could be the first one here.
+                No public stacks yet. Yours could be the first one here.
               </p>
               <p className="text-[13.5px] text-[#B4A78E]">
                 Build a card, then flip it to public from your dashboard.

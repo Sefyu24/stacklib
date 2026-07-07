@@ -168,7 +168,7 @@ export default function UniversalSearch({
           onFocus={() => {
             if (query.trim()) setOpen(true);
           }}
-          placeholder="Add a tool — React, Convex, Cursor…"
+          placeholder="Add a tool: React, Convex, Cursor…"
           className="h-11 text-[14.5px]"
         />
         {open && q.length >= 1 && (hasRows || pending) && (

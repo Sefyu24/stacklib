@@ -2,13 +2,18 @@
 
 // Browse feed card — the approved "1c Loose pile" design. Each stack's
 // sections are cards tossed on the table (closed rotated pile) that snap
-// into a tidy column on hover. Touch / coarse pointers and reduced-motion
-// users always get the extended column; the interaction is pure CSS (see
-// the .stackpile rules in app/globals.css), so there is no hydration flash.
+// into a tidy column on hover (desktop) or on TAP (touch — the whole card
+// toggles open/closed, same interaction as the landing community pile; the
+// Layers button is the visible affordance and "OPEN" navigates). Desktop
+// click still goes straight to the stack page. Reduced-motion users always
+// get the extended column (see the .stackpile rules in app/globals.css).
 
 import type { CSSProperties, KeyboardEvent } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Layers01Icon } from "@hugeicons/core-free-icons";
 import { Logomark } from "@/components/brand/logo";
 import LogoFramework from "@/app/stack/logo-framework";
 
@@ -177,6 +182,7 @@ function SectionLayer({
 
 export default function StackPile({ stack }: { stack: StackPileStack }) {
   const router = useRouter();
+  const [open, setOpen] = useState(false);
   const n = stack.sections.length;
   const initial = (stack.authorName || stack.name)[0]?.toUpperCase() || "S";
   const toolsLabel = `${stack.toolCount} ${stack.toolCount === 1 ? "tool" : "tools"}`;
@@ -185,6 +191,17 @@ export default function StackPile({ stack }: { stack: StackPileStack }) {
     : toolsLabel;
 
   const navigate = () => router.push(`/s/${stack.id}`);
+  const toggle = () => setOpen((v) => !v);
+  // Fine pointers fan the pile on hover, so a click means "open the stack".
+  // Coarse pointers (touch) have no hover — there, tapping the card IS the
+  // fan toggle (same as the landing pile) and OPEN / the footer navigate.
+  const onCardClick = () => {
+    const fine = window.matchMedia(
+      "(hover: hover) and (pointer: fine)"
+    ).matches;
+    if (fine) navigate();
+    else toggle();
+  };
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     // Only act on the card itself — Enter on the inner @handle link
     // bubbles here and must keep its own destination.
@@ -196,10 +213,11 @@ export default function StackPile({ stack }: { stack: StackPileStack }) {
 
   return (
     <div
+      data-open={open}
       role="link"
       tabIndex={0}
-      aria-label={`${stack.name} — ${toolsLabel}`}
-      onClick={navigate}
+      aria-label={`${stack.name}, ${toolsLabel}`}
+      onClick={onCardClick}
       onKeyDown={onKeyDown}
       className="stackpile-card group cursor-pointer rounded-[18px] border-[1.5px] border-foreground bg-[#FBF7F0] p-3.5 shadow-[0_5px_0_var(--foreground)] outline-none transition-shadow duration-200 hover:shadow-[0_7px_0_var(--foreground)] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
     >
@@ -247,6 +265,19 @@ export default function StackPile({ stack }: { stack: StackPileStack }) {
         >
           HOVER ▾
         </span>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggle();
+          }}
+          aria-expanded={open}
+          aria-label={open ? "Stack the sections" : "Fan out the sections"}
+          className="flex flex-none cursor-pointer items-center justify-center rounded-[9px] border border-[#E0D5BE] bg-card text-[#8A7B63] transition-colors hover:border-primary hover:text-primary group-data-[open=true]:border-primary group-data-[open=true]:bg-[#FEF3E7] group-data-[open=true]:text-primary"
+          style={{ width: 30, height: 30 }}
+        >
+          <HugeiconsIcon icon={Layers01Icon} size={16} strokeWidth={2} />
+        </button>
       </div>
 
       {/* The pile */}
@@ -288,7 +319,8 @@ export default function StackPile({ stack }: { stack: StackPileStack }) {
         </div>
       )}
 
-      {/* Footer */}
+      {/* Footer. OPEN is the touch path to the stack page (tapping the card
+          toggles the pile there); on desktop it duplicates the card click. */}
       <div className="mt-3.5 flex items-center justify-between gap-3 border-t border-[#EDE4D2] pt-2.5">
         {stack.handle ? (
           <Link
@@ -299,14 +331,25 @@ export default function StackPile({ stack }: { stack: StackPileStack }) {
             superstacks.dev/{stack.handle}
           </Link>
         ) : (
-          <span
-            className="truncate font-mono"
-            style={{ fontSize: 9, color: "#B4A78E" }}
+          <Link
+            href={`/s/${stack.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="truncate font-mono text-[9px] text-[#B4A78E] hover:text-primary"
           >
             superstacks.dev/{stack.id}
-          </span>
+          </Link>
         )}
-        <Logomark size={14} className="flex-none" />
+        <div className="flex flex-none items-center gap-2.5">
+          <Link
+            href={`/s/${stack.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="font-mono font-bold text-primary hover:underline"
+            style={{ fontSize: 9, letterSpacing: "0.14em" }}
+          >
+            OPEN →
+          </Link>
+          <Logomark size={14} className="flex-none" />
+        </div>
       </div>
     </div>
   );

@@ -54,7 +54,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { stackId } = await params;
   const stack = await getStack(stackId);
-  const title = stack ? `${stack.name} — Superstacks` : "Superstacks";
+  const title = stack ? `${stack.name} · Superstacks` : "Superstacks";
   const description = "A tech stack built and shared with Superstacks.";
   const cardUrl = `${siteUrl()}/api/card/${stackId}`;
 
@@ -148,7 +148,7 @@ export default async function SharePage({
             Build your own stack card
           </p>
           <p className="text-sm text-[#8a7d70]">
-            Takes about a minute — logos included.
+            Takes about a minute, logos included.
           </p>
           <Link href="/stack">
             <Button className="bg-[#ed6809] text-white hover:bg-[#d55e08]">

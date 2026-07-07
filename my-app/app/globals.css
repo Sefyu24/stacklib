@@ -40,42 +40,53 @@
 }
 
 /* Browse "loose pile" stack cards (components/browse/stackPile.tsx).
-   Default: always extended — touch / coarse pointers and reduced-motion
-   users see the full column immediately. Fine pointers with motion get the
-   closed rotated pile that opens into the tidy column on hover/focus.
-   Geometry (--closed-h/--open-h/--closed-top/--open-top/--angle/delays) is
-   computed per stack from its real section count in the component. */
+   Closed rotated pile by default. data-open="true" (React state — tap
+   toggles it on coarse pointers, same interaction as the landing commpile)
+   fans it into the tidy column; fine pointers with motion also fan it on
+   hover/focus. Reduced-motion users always get the open column, no
+   animation. Geometry (--closed-h/--open-h/--closed-top/--open-top/
+   --angle/delays) is computed per stack from its real section count. */
 .stackpile {
   position: relative;
   margin-top: 20px;
-  height: var(--open-h);
+  height: var(--closed-h);
 }
 .stackpile-layer {
   position: absolute;
   left: 0;
   right: 0;
-  top: var(--open-top);
-  transform: rotate(0deg);
+  top: var(--closed-top);
+  transform: rotate(var(--angle));
 }
 .stackpile-hint {
   display: none;
 }
 
-@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .stackpile-hint {
-    display: inline-flex;
-  }
+@media (prefers-reduced-motion: no-preference) {
   .stackpile {
-    height: var(--closed-h);
     transition: height 450ms cubic-bezier(0.22, 1, 0.36, 1);
   }
   .stackpile-layer {
-    top: var(--closed-top);
-    transform: rotate(var(--angle));
     transition:
       top 450ms cubic-bezier(0.22, 1, 0.36, 1),
       transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
     transition-delay: var(--close-delay);
+  }
+  /* Explicit open (tap / toggle button) */
+  .stackpile-card[data-open="true"] .stackpile {
+    height: var(--open-h);
+  }
+  .stackpile-card[data-open="true"] .stackpile-layer {
+    top: var(--open-top);
+    transform: rotate(0deg);
+    transition-delay: var(--open-delay);
+  }
+}
+
+/* Desktop, fine pointer, motion: hover also fans the pile open. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .stackpile-hint {
+    display: inline-flex;
   }
   .stackpile-card:hover .stackpile,
   .stackpile-card:focus-within .stackpile {
@@ -86,6 +97,17 @@
     top: var(--open-top);
     transform: rotate(0deg);
     transition-delay: var(--open-delay);
+  }
+}
+
+/* Reduced motion: no animation, always render the tidy open column. */
+@media (prefers-reduced-motion: reduce) {
+  .stackpile {
+    height: var(--open-h);
+  }
+  .stackpile-layer {
+    top: var(--open-top);
+    transform: none;
   }
 }
 

@@ -159,7 +159,7 @@ export default function MyCardsSection() {
             No cards yet
           </p>
           <p className="text-[14px] text-[#8A7B63]">
-            Build your first stack card — it takes about a minute.
+            Build your first stack card. It takes about a minute.
           </p>
           <Button
             variant="brand"

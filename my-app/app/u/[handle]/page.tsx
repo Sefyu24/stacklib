@@ -30,7 +30,7 @@ export async function generateMetadata({
   const { handle } = await params;
   const data = await getPublicProfile(handle);
   if (!data) return { title: "Superstacks" };
-  const title = `${data.profile.displayName} (@${data.profile.handle}) — Superstacks`;
+  const title = `${data.profile.displayName} (@${data.profile.handle}) · Superstacks`;
   const description =
     data.profile.tagline ??
     `${data.profile.displayName}'s tech stacks on Superstacks.`;
@@ -175,7 +175,7 @@ export default async function PublicProfilePage({
             Build your own stack card
           </p>
           <p className="text-sm text-[#8A7B63]">
-            Takes about a minute — logos included.
+            Takes about a minute, logos included.
           </p>
           <Link href="/stack">
             <Button variant="brand">Start on Superstacks</Button>

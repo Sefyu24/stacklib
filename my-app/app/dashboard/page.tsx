@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import DashboardShell from "@/components/dashboard/dashboardShell";
 
 export const metadata: Metadata = {
-  title: "Dashboard — Superstacks",
+  title: "Dashboard · Superstacks",
   description: "Manage your Superstacks profile and stack cards.",
 };
 

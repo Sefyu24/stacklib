@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Couldn't read any dependencies — is that a valid package.json?",
+          "Couldn't read any dependencies. Is that a valid package.json?",
       },
       { status: 422 }
     );

@@ -38,12 +38,14 @@ interface PileSection {
 interface PileStack {
   initial: string;
   avatarBg: string;
+  // Self-hosted X profile photo (public/community/<handle>.jpg).
+  avatar: string;
   // Display handle including the leading "@" (e.g. "@levelsio").
   handle: string;
   // Real name shown as the primary label.
   name: string;
   meta: string;
-  // Factual tagline describing their public work — not a first-person quote.
+  // Factual tagline describing their public work, not a first-person quote.
   tagline: string;
   sections: PileSection[];
 }
@@ -54,10 +56,11 @@ const SAMPLES: PileStack[] = [
   {
     initial: "P",
     avatarBg: "var(--primary)",
+    avatar: "/community/levelsio.jpg",
     handle: "@levelsio",
     name: "Pieter Levels",
     meta: "solo maker · 9 tools",
-    tagline: "Ships solo. One PHP file, no frameworks.",
+    tagline: "Ships solo, one PHP file, no frameworks.",
     sections: [
       {
         name: "Frontend",
@@ -94,10 +97,11 @@ const SAMPLES: PileStack[] = [
   {
     initial: "T",
     avatarBg: "var(--foreground)",
+    avatar: "/community/theo.jpg",
     handle: "@theo",
     name: "Theo Browne",
     meta: "full-stack · 8 tools",
-    tagline: "Creator of the T3 stack. Full-stack TypeScript.",
+    tagline: "Made the T3 stack. Full-stack TypeScript, all the way down.",
     sections: [
       {
         name: "Frontend",
@@ -131,10 +135,11 @@ const SAMPLES: PileStack[] = [
   {
     initial: "P",
     avatarBg: "#5BA35B",
+    avatar: "/community/theprimeagen.jpg",
     handle: "@ThePrimeagen",
     name: "ThePrimeagen",
     meta: "terminal-driven · 6 tools",
-    tagline: "Neovim, Rust & Go. tmux-driven, built Harpoon.",
+    tagline: "Lives in Neovim and tmux. Writes Rust and Go, built Harpoon.",
     sections: [
       {
         name: "IDE",
@@ -341,20 +346,22 @@ function PileCard({ stack }: { stack: PileStack }) {
       role="button"
       tabIndex={0}
       aria-expanded={open}
-      aria-label={`${stack.name} stack — ${open ? "collapse" : "expand"}`}
+      aria-label={`${stack.name} stack, ${open ? "collapse" : "expand"}`}
       onClick={toggle}
       onKeyDown={onKeyDown}
       className="commpile-card group cursor-pointer rounded-[18px] border-[1.5px] border-foreground bg-[#FBF7F0] p-3.5 shadow-[0_5px_0_var(--foreground)] transition-shadow duration-200 hover:shadow-[0_7px_0_var(--foreground)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#F6F1E8]"
     >
       {/* Header */}
       <div className="flex items-center gap-2.5">
-        <span
-          className="flex h-9 w-9 flex-none items-center justify-center rounded-[10px] font-black"
-          style={{ background: stack.avatarBg, color: "#FFF7EE", fontSize: 15 }}
-          aria-hidden
-        >
-          {stack.initial}
-        </span>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={stack.avatar}
+          alt={`${stack.name} on X`}
+          width={36}
+          height={36}
+          loading="lazy"
+          className="h-9 w-9 flex-none rounded-[10px] border border-[#E6DCC8] object-cover"
+        />
         <div className="min-w-0 flex-1">
           <div className="truncate text-[14.5px] font-extrabold text-foreground">
             {stack.name}
@@ -431,7 +438,7 @@ function PileCard({ stack }: { stack: PileStack }) {
 
 export default function CommunityPile() {
   return (
-    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 items-start gap-5 sm:grid-cols-2 lg:grid-cols-3">
       {SAMPLES.map((stack) => (
         <PileCard key={stack.handle} stack={stack} />
       ))}

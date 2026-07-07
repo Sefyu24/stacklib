@@ -21,7 +21,9 @@ import {
 } from "@/components/ui/dialog";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
+  CheckmarkCircle02Icon,
   GithubIcon,
+  Loading03Icon,
   NewTwitterIcon,
   ShuffleIcon,
 } from "@hugeicons/core-free-icons";
@@ -65,6 +67,10 @@ export default function StackCardPreview({
   // internally so the call site needs no new props.
   const { isSignedIn } = useUser();
   const [gateOpen, setGateOpen] = useState(false);
+  // Button progress: the PNG fetch (2x render) takes a beat, and copy shows a
+  // brief confirmation so the click always feels acknowledged.
+  const [downloading, setDownloading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Server-synced local state, adjusted during render (not in an effect):
   // when another session changes the stack, the new server value wins; local
@@ -261,7 +267,9 @@ export default function StackCardPreview({
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl());
-      toast.success("Share link copied to clipboard");
+      setCopied(true);
+      toast.success("Link copied to clipboard");
+      window.setTimeout(() => setCopied(false), 1800);
     } catch {
       toast.error("Couldn't copy the link");
     }
@@ -304,13 +312,16 @@ export default function StackCardPreview({
   };
 
   const downloadPng = async () => {
+    if (downloading) return;
+    setDownloading(true);
     try {
-      // scale=2 → 2400x1260 so the PNG stays sharp on retina screens and
+      // scale=2 gives 2400x1260 so the PNG stays sharp on retina screens and
       // social zoom; t busts the browser HTTP cache so the download always
       // reflects the current stack (the OG route is edge-cacheable).
       const res = await fetch(`/api/card/${stackId}?scale=2&t=${Date.now()}`, {
         cache: "no-store",
       });
+      if (!res.ok) throw new Error(`card route ${res.status}`);
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -318,9 +329,11 @@ export default function StackCardPreview({
       a.download = `${stack.name.replace(/\s+/g, "-").toLowerCase()}.png`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Card exported as PNG");
+      toast.success("Card saved as PNG");
     } catch {
-      toast.error("Couldn't export the card");
+      toast.error("Couldn't save the card");
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -429,15 +442,42 @@ export default function StackCardPreview({
           Share on X
         </Button>
         <div className="flex gap-2.5">
-          <Button variant="outline" className="flex-1" onClick={copyLink}>
-            Copy link
+          <Button
+            variant="outline"
+            className="flex-1 gap-2"
+            onClick={copyLink}
+            aria-live="polite"
+          >
+            {copied ? (
+              <>
+                <HugeiconsIcon
+                  icon={CheckmarkCircle02Icon}
+                  className="size-4 text-primary"
+                />
+                Copied
+              </>
+            ) : (
+              "Copy link"
+            )}
           </Button>
           <Button
             variant="outline"
-            className="flex-1"
+            className="flex-1 gap-2"
             onClick={handleDownloadClick}
+            disabled={downloading}
+            aria-busy={downloading}
           >
-            Download PNG
+            {downloading ? (
+              <>
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  className="size-4 animate-spin"
+                />
+                Saving…
+              </>
+            ) : (
+              "Download PNG"
+            )}
           </Button>
         </div>
       </div>

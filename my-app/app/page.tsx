@@ -115,15 +115,16 @@ export default function Home() {
             Your tech stack, ready to share.
           </h1>
           <p className="max-w-[44ch] text-pretty text-[17px] leading-relaxed text-[#6B5D46]">
-            Turn the tools you use into a beautiful card. Import from GitHub,
-            customize it, and post it anywhere — X, LinkedIn, your README.
+            Turn the tools you use into a card worth sharing. Import from
+            GitHub, make it yours, and post it anywhere: X, LinkedIn, your
+            README.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="/stack"
               className="rounded-xl border border-primary bg-primary px-[26px] py-3.5 text-[15px] font-extrabold text-primary-foreground shadow-[0_3px_0_var(--primary-shadow)] hover:bg-[var(--primary-hover)]"
             >
-              Create your card — it&apos;s free
+              Create your card, free
             </Link>
             <a
               href="#playground"
@@ -148,7 +149,7 @@ export default function Home() {
         <div className="mx-auto max-w-[1080px]">
           <div className="mb-11 flex flex-col items-center gap-3 text-center">
             <span className="font-mono text-[11px] font-semibold tracking-[0.2em] text-primary">
-              TRY IT — NO SIGNUP
+              TRY IT, NO SIGNUP
             </span>
             <h2 className="text-[30px] font-black tracking-[-0.025em] sm:text-[38px]">
               Build one right now.
@@ -178,7 +179,7 @@ export default function Home() {
               </h2>
               <p className="max-w-[52ch] text-pretty text-[15.5px] leading-relaxed text-[#6B5D46]">
                 Browse public stacks from indie hackers, teams, and students.
-                See what they ship with — then remix it into your own card.
+                See what they ship with, then remix it into your own card.
               </p>
             </div>
             <Link
@@ -264,7 +265,7 @@ export default function Home() {
               </div>
               <div className="flex flex-col gap-2">
                 <h3 className="text-[22px] font-extrabold tracking-[-0.015em]">
-                  Add your tools — or link a GitHub repo
+                  Add your tools, or link a GitHub repo
                 </h3>
                 <p className="text-pretty text-[14.5px] leading-relaxed text-[#6B5D46]">
                   Search and add tools by hand, or paste a repo and we detect
@@ -299,8 +300,8 @@ export default function Home() {
                   Customize it
                 </h3>
                 <p className="text-pretty text-[14.5px] leading-relaxed text-[#6B5D46]">
-                  Pin favorites, drag to reorder, pick a card style — minimal,
-                  bento, or terminal.
+                  Pin favorites, drag to reorder, and pick a card style:
+                  minimal, terminal, or lid.
                 </p>
               </div>
               <div className="col-span-2 flex flex-col gap-[7px] lg:col-span-1">
@@ -362,7 +363,7 @@ export default function Home() {
                   Just share it
                 </h3>
                 <p className="text-pretty text-[14.5px] leading-relaxed text-[#6B5D46]">
-                  One link. It unfurls as your card on X, LinkedIn, Discord —
+                  One link. It unfurls into your card on X, LinkedIn, Discord,
                   anywhere links go.
                 </p>
               </div>

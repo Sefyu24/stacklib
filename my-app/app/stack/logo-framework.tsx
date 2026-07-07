@@ -3,8 +3,11 @@
 import { toolLogoUrl } from "@/lib/logo";
 
 /**
- * Tool logo: a warm letter-tile with the resolved icon layered on top (Simple
- * Icons → Brandfetch). If the icon fails to load, the tile shows through.
+ * Tool logo: a warm letter-tile with the resolved icon layered on top. Prefers
+ * a durable Brandfetch logo (from the tool's stored logoUrl); for catalog tools
+ * that have no stored logo yet — e.g. the search / filter dropdowns — it falls
+ * back to the self-hosted Brandfetch PNG at /hero-icons/<slug>.png. If neither
+ * loads, the warm letter tile shows through.
  */
 export default function LogoFramework({
   name,
@@ -19,7 +22,9 @@ export default function LogoFramework({
   url?: string | null;
   size?: number;
 }) {
-  const logo = toolLogoUrl({ iconSlug: slug, logoUrl: src, url });
+  const logo =
+    toolLogoUrl({ iconSlug: slug, logoUrl: src, url }) ??
+    (slug ? `/hero-icons/${slug}.png` : null);
 
   return (
     <span

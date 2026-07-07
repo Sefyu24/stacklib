@@ -22,6 +22,7 @@ import {
   LockIcon,
 } from "@hugeicons/core-free-icons";
 import { useMutation } from "convex/react";
+import { useClerk } from "@clerk/nextjs";
 import { api } from "@/convex/_generated/api";
 import { FunctionReturnType } from "convex/server";
 import { Id } from "@/convex/_generated/dataModel";
@@ -68,6 +69,13 @@ export default function GithubImportDialog({
 
   const getOrCreateTool = useMutation(api.tools.getOrCreateTool);
   const updateSectionTools = useMutation(api.stacks.updateSectionTools);
+  const { openUserProfile } = useClerk();
+
+  // Open Clerk's account portal on the connected-accounts panel, then retry
+  // loading repos once the user comes back (the modal closes when they're done).
+  const connectGithub = () => {
+    openUserProfile();
+  };
 
   const reset = () => {
     setRepoInput("");
@@ -229,7 +237,7 @@ export default function GithubImportDialog({
         <DialogHeader>
           <DialogTitle>Import your stack</DialogTitle>
           <DialogDescription>
-            We match dependencies against known tools — nothing is added to
+            We match dependencies against known tools. Nothing is added to
             your card until you review it.
           </DialogDescription>
         </DialogHeader>
@@ -281,20 +289,39 @@ export default function GithubImportDialog({
                 </p>
               )}
               {repoList.status === "signed_out" && (
-                <p className="px-1 py-2 text-sm text-muted-foreground">
-                  Sign in with GitHub to pick from your repos — or paste any
-                  repo URL above.
-                </p>
+                <div className="flex flex-col items-start gap-2 px-1 py-2">
+                  <p className="text-sm text-muted-foreground">
+                    Sign in to pick from your repos, or paste any repo URL
+                    above.
+                  </p>
+                  <Button asChild variant="outline" size="sm" className="gap-2">
+                    <a href="/login">
+                      <HugeiconsIcon icon={GithubIcon} className="size-4" />
+                      Sign in with GitHub
+                    </a>
+                  </Button>
+                </div>
               )}
               {repoList.status === "not_connected" && (
-                <p className="px-1 py-2 text-sm text-muted-foreground">
-                  Connect GitHub to your account to browse your repos (Profile
-                  → Connected accounts) — or paste a repo URL above.
-                </p>
+                <div className="flex flex-col items-start gap-2 px-1 py-2">
+                  <p className="text-sm text-muted-foreground">
+                    Your account isn&apos;t connected to GitHub yet. Connect it
+                    to browse your repos, or paste a repo URL above.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={connectGithub}
+                  >
+                    <HugeiconsIcon icon={GithubIcon} className="size-4" />
+                    Connect GitHub
+                  </Button>
+                </div>
               )}
               {repoList.status === "error" && (
                 <p className="px-1 py-2 text-sm text-muted-foreground">
-                  Couldn&apos;t load your repos right now — paste a repo URL
+                  Couldn&apos;t load your repos right now. Paste a repo URL
                   above instead.
                 </p>
               )}
@@ -328,7 +355,7 @@ export default function GithubImportDialog({
 
           <TabsContent value="paste" className="mt-3 flex flex-col gap-2">
             <Textarea
-              placeholder='Paste your package.json here — only dependency names are read, nothing else leaves your machine…'
+              placeholder='Paste your package.json here. We only read dependency names, nothing else leaves your machine…'
               value={pasteInput}
               onChange={(e) => setPasteInput(e.target.value)}
               className="h-36 font-mono text-xs"
@@ -373,8 +400,8 @@ export default function GithubImportDialog({
             <p className="text-sm text-muted-foreground">
               <span className="font-medium text-foreground">{sourceLabel}</span>
               {result.tools.length === 0
-                ? " — no recognizable tools found."
-                : ` — found ${result.tools.length} tool${
+                ? ": no recognizable tools found."
+                : `: found ${result.tools.length} tool${
                     result.tools.length === 1 ? "" : "s"
                   }. Tap to exclude any you don't want.`}
             </p>

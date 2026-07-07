@@ -134,7 +134,7 @@ export default function Playground() {
                 setQuery(v);
                 setOpen(true);
               }}
-              placeholder="Search any tool — Svelte, Supabase, Zed…"
+              placeholder="Search any tool: Svelte, Supabase, Zed…"
               className="h-12 text-[15px]"
             />
             {open && query.trim().length >= 1 && results.length > 0 && (
@@ -257,7 +257,7 @@ export default function Playground() {
           href="/stack"
           className="rounded-[10px] border border-primary bg-primary p-3 text-center text-[13.5px] font-bold text-primary-foreground hover:bg-[var(--primary-hover)]"
         >
-          Keep this card — customize it
+          Keep this card and customize it
         </Link>
       </div>
     </div>
