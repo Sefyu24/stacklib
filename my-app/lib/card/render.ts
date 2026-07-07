@@ -32,18 +32,6 @@ export const LID_MARK_PATHS: Record<string, string> = {
 };
 export const LID_EDITIONS: LidEdition[] = ["apple", "microsoft", "linux"];
 
-/**
- * Center OS mark artwork per edition (Simple Icons CDN, tinted to the
- * edition's finish). Microsoft is drawn as four flat squares in the
- * renderer, so it has no artwork URL. The OG route pre-fetches this to a
- * data URI (satori can't fetch reliably); the browser preview uses the URL.
- */
-export const LID_MARK_URL: Record<LidEdition, string | null> = {
-  apple: "https://cdn.simpleicons.org/apple/C9C2B6",
-  microsoft: null,
-  linux: "https://cdn.simpleicons.org/linux/F0E6D2",
-};
-
 export function truncate(name: string, max = 22): string {
   return name.length > max ? `${name.slice(0, max - 1)}…` : name;
 }
@@ -97,7 +85,7 @@ export interface CardRenderData {
   /** User-dragged sticker positions (normalized 0..1), keyed by toolId */
   stickerPositions: Record<string, { x: number; y: number }>;
   stickerModes: Record<string, string>;
-  /** Pre-resolved center OS mark (data URI on the OG path); null = use LID_MARK_URL */
+  /** Pre-resolved center OS mark (data URI on the OG path); null = inline LID_MARK_PATHS */
   lidMarkSrc: string | null;
   sections: CardRenderSection[];
 }
