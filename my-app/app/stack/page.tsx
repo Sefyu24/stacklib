@@ -20,7 +20,13 @@ import SectionsBoard from "@/components/builder/sectionsBoard";
 import StackCardPreview from "@/components/card/stackCardPreview";
 import GithubImportDialog from "@/components/github/importDialog";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { PencilEdit02Icon, PinIcon } from "@hugeicons/core-free-icons";
+import {
+  PencilEdit02Icon,
+  PinIcon,
+  GithubIcon,
+  GlobeIcon,
+  CircleLock01Icon,
+} from "@hugeicons/core-free-icons";
 
 const GUEST_KEY = "superstack_guest_id";
 
@@ -41,6 +47,7 @@ export default function StackEditor() {
   const updateStackDetailsMutation = useMutation(api.stacks.updateStackDetails);
   const setCardThemeMutation = useMutation(api.stacks.setCardTheme);
   const updateStackIdentityMutation = useMutation(api.stacks.updateStackIdentity);
+  const setStackVisibilityMutation = useMutation(api.profiles.setStackVisibility);
 
   const stack = useQuery(api.stacks.getStack, stackId ? { stackId } : "skip");
 
@@ -84,16 +91,35 @@ export default function StackEditor() {
   }, [stack?.subtitle]);
   const [authorName, setAuthorName] = useState("");
   const [authorHandle, setAuthorHandle] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
   useEffect(() => {
     setAuthorName(stack?.authorName ?? "");
   }, [stack?.authorName]);
   useEffect(() => {
     setAuthorHandle(stack?.authorHandle ?? "");
   }, [stack?.authorHandle]);
+
+  // The card avatar is the signed-in user's GitHub profile picture — never a
+  // manual URL. Persist Clerk's imageUrl to authorAvatarUrl once it's known
+  // and differs from what's stored. Convex acts as the signed-in user, so wait
+  // for the auth handshake before writing (the mutation asserts ownership).
   useEffect(() => {
-    setAvatarUrl(stack?.authorAvatarUrl ?? "");
-  }, [stack?.authorAvatarUrl]);
+    if (!user || !isAuthenticated || !stackId) return;
+    const githubAvatar = user.imageUrl ?? "";
+    if (!githubAvatar) return;
+    if ((stack?.authorAvatarUrl ?? "") === githubAvatar) return;
+    updateStackIdentityMutation({
+      stackId,
+      authorAvatarUrl: githubAvatar,
+    }).catch((err) =>
+      console.error("Error saving GitHub avatar:", err)
+    );
+  }, [
+    user,
+    isAuthenticated,
+    stackId,
+    stack?.authorAvatarUrl,
+    updateStackIdentityMutation,
+  ]);
 
   if (!stackId || stack === undefined) {
     return (
@@ -226,7 +252,7 @@ export default function StackEditor() {
   }
 
   function commitIdentity(
-    field: "authorName" | "authorHandle" | "authorAvatarUrl",
+    field: "authorName" | "authorHandle",
     value: string
   ) {
     if ((stack![field] ?? "") === value.trim()) return;
@@ -236,6 +262,8 @@ export default function StackEditor() {
   }
 
   const showAvatar = stack.showAvatar ?? true;
+  const isPublic = stack.isPublic ?? false;
+  const isSignedIn = Boolean(user);
 
   const selectedNames = stack.sections.flatMap((s) =>
     s.selectedTools.map((st) => st.tool.name)
@@ -302,28 +330,12 @@ export default function StackEditor() {
           </p>
 
           <div className="rounded-[10px] border border-border p-3 mb-6">
-            <div className="mb-2 flex items-center justify-between gap-3">
+            <div className="mb-2 flex items-center gap-3">
               <span className="font-mono text-[10px] font-bold uppercase tracking-[0.2em] text-[#8A7B63]">
                 Card identity
               </span>
-              <Toggle
-                size="sm"
-                pressed={showAvatar}
-                onPressedChange={() =>
-                  updateStackIdentityMutation({
-                    stackId: stackId!,
-                    showAvatar: !showAvatar,
-                  }).catch((err) =>
-                    console.error("Error toggling avatar:", err)
-                  )
-                }
-                aria-label="Show avatar"
-                className="h-7 px-2 font-mono text-[11px] font-semibold text-[#8A7B63] data-[state=on]:text-foreground"
-              >
-                Show avatar
-              </Toggle>
             </div>
-            <div className="grid gap-2 sm:grid-cols-3">
+            <div className="grid gap-2 sm:grid-cols-2">
               <Input
                 value={authorName}
                 onChange={(e) => setAuthorName(e.target.value)}
@@ -344,16 +356,87 @@ export default function StackEditor() {
                 placeholder="@handle"
                 aria-label="Handle"
               />
-              <Input
-                value={avatarUrl}
-                onChange={(e) => setAvatarUrl(e.target.value)}
-                onBlur={() => commitIdentity("authorAvatarUrl", avatarUrl)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") e.currentTarget.blur();
-                }}
-                placeholder="Avatar URL"
-                aria-label="Avatar URL"
-              />
+            </div>
+
+            {/* GitHub photo: the ONLY avatar control. When signed in via
+                GitHub, Clerk's imageUrl is auto-saved to authorAvatarUrl (see
+                effect above); this toggle just shows/hides it on the card. */}
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <HugeiconsIcon
+                  icon={GithubIcon}
+                  className="h-[15px] w-[15px] flex-none text-[#8A7B63]"
+                  aria-hidden
+                />
+                <div className="min-w-0">
+                  <p className="text-[12.5px] font-semibold text-foreground">
+                    Show my GitHub photo
+                  </p>
+                  {!isSignedIn && (
+                    <p className="text-[11px] leading-snug text-[#B4A78E]">
+                      Sign in with GitHub to add your profile picture.
+                    </p>
+                  )}
+                </div>
+              </div>
+              <Toggle
+                size="sm"
+                pressed={isSignedIn && showAvatar}
+                disabled={!isSignedIn}
+                onPressedChange={() =>
+                  updateStackIdentityMutation({
+                    stackId: stackId!,
+                    showAvatar: !showAvatar,
+                  }).catch((err) =>
+                    console.error("Error toggling avatar:", err)
+                  )
+                }
+                aria-label="Show my GitHub photo"
+                className="h-7 shrink-0 px-2 font-mono text-[11px] font-semibold text-[#8A7B63] data-[state=on]:text-foreground"
+              >
+                {isSignedIn && showAvatar ? "On" : "Off"}
+              </Toggle>
+            </div>
+
+            {/* Profile visibility — public/private. Only meaningful when
+                signed in; disabled with a hint for guests. */}
+            <div className="mt-3 flex items-center justify-between gap-3 border-t border-border pt-3">
+              <div className="flex min-w-0 items-center gap-2">
+                <HugeiconsIcon
+                  icon={isPublic && isSignedIn ? GlobeIcon : CircleLock01Icon}
+                  className="h-[15px] w-[15px] flex-none text-[#8A7B63]"
+                  aria-hidden
+                />
+                <div className="min-w-0">
+                  <p className="text-[12.5px] font-semibold text-foreground">
+                    Show this card on my profile
+                  </p>
+                  <p className="text-[11px] leading-snug text-[#B4A78E]">
+                    {!isSignedIn
+                      ? "Sign in to publish this card to your profile."
+                      : isPublic
+                        ? "Public — anyone can find it on your profile."
+                        : "Private — only you can see it."}
+                  </p>
+                </div>
+              </div>
+              <Toggle
+                size="sm"
+                pressed={isSignedIn && isPublic}
+                disabled={!isSignedIn}
+                onPressedChange={() =>
+                  setStackVisibilityMutation({
+                    stackId: stackId!,
+                    isPublic: !isPublic,
+                  }).catch((err) =>
+                    console.error("Error updating visibility:", err)
+                  )
+                }
+                aria-label="Show this card on my profile"
+                className="h-7 shrink-0 px-2 font-mono text-[11px] font-semibold text-[#8A7B63] data-[state=on]:text-foreground"
+              >
+                {isSignedIn && isPublic ? "Public" : "Private"}
+              </Toggle>
             </div>
           </div>
 
