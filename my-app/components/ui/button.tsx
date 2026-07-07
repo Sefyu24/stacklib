@@ -10,13 +10,17 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        // Chunky pressable brand CTA (Second Scent orange with a bottom shadow)
+        // Chunky pressable brand CTA (Second Scent orange with a layered hard
+        // shadow). Raised 4px at rest, lifts a touch on hover, and physically
+        // depresses into the surface on press (translate down + shrink shadow).
         brand:
-          "border border-primary bg-primary text-primary-foreground font-bold shadow-[0_2px_0_var(--primary-shadow)] hover:bg-[var(--primary-hover)] active:translate-y-[1px] active:shadow-[0_1px_0_var(--primary-shadow)]",
+          "border border-primary bg-primary text-primary-foreground font-bold shadow-[0_4px_0_var(--primary-shadow)] transition-[transform,box-shadow,background-color] duration-[120ms] ease-out hover:bg-[var(--primary-hover)] hover:-translate-y-[1px] hover:shadow-[0_5px_0_var(--primary-shadow)] active:translate-y-[2px] active:shadow-[0_1px_0_var(--primary-shadow)]",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+        // Soft pressable secondary action — a quiet border-tinted hard shadow
+        // that compresses on press for the same tactile feel (lighter).
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border bg-background shadow-[0_2px_0_var(--border)] transition-[transform,box-shadow,background-color] duration-[120ms] ease-out hover:bg-accent hover:text-accent-foreground active:translate-y-[1px] active:shadow-[0_1px_0_var(--border)] dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:

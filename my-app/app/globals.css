@@ -27,6 +27,16 @@
   [style*="floaty"] {
     animation: none !important;
   }
+  /* CTA press micro-interaction (components/ui/button.tsx): keep the layered
+     shadow but drop the physical translate + snap transitions off so the
+     button doesn't shift for reduced-motion users. */
+  [data-slot="button"] {
+    transition: none !important;
+  }
+  [data-slot="button"]:hover,
+  [data-slot="button"]:active {
+    transform: none !important;
+  }
 }
 
 /* Browse "loose pile" stack cards (components/browse/stackPile.tsx).
