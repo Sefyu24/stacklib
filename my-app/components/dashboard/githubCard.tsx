@@ -14,7 +14,7 @@ import {
 import { convexErrorMessage } from "@/components/dashboard/profileSection";
 
 /**
- * Lets a user who signed in with email/Google attach their GitHub account
+ * Lets a user who signed in with email attach their GitHub account
  * (via Clerk external accounts) and save the username onto their profile.
  */
 export default function GithubCard() {
