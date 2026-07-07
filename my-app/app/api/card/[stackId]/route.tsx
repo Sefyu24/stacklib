@@ -9,7 +9,6 @@ import {
   buildCardRenderData,
   getCardThemeKey,
   getLidEdition,
-  LID_MARK_URL,
 } from "@/lib/card/render";
 import { toolLogoUrl } from "@/lib/logo";
 import {
@@ -135,12 +134,8 @@ export async function GET(
       ? await fetchLogoAsDataUri(stack.authorAvatarUrl)
       : null;
 
-  // The lid theme's center OS mark also has to be a data URI for satori.
-  const lidMarkUrl =
-    getCardThemeKey(stack.cardTheme) === "lid"
-      ? LID_MARK_URL[getLidEdition(stack.lidEdition)]
-      : null;
-  const lidMarkSrc = lidMarkUrl ? await fetchLogoAsDataUri(lidMarkUrl) : null;
+  // The lid's center OS mark renders from inline SVG paths (LID_MARK_PATHS)
+  // — no network fetch, which failed intermittently from Vercel.
 
   const data = buildCardRenderData(
     {
@@ -157,8 +152,7 @@ export async function GET(
       stickerPositions: stack.stickerPositions,
     },
     (t) => logoByToolId.get(t.toolId) ?? null,
-    avatarSrc,
-    lidMarkSrc
+    avatarSrc
   );
 
   const fonts = await loadFonts();

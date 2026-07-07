@@ -15,6 +15,7 @@
 
 import { Logomark } from "@/components/brand/logo";
 import {
+  LID_MARK_PATHS,
   CardRenderData,
   CardRenderSection,
   CardRenderTool,
@@ -23,7 +24,6 @@ import {
   LID_CAPTION_H,
   LID_MARK_CX,
   LID_MARK_CY,
-  LID_MARK_URL,
   LidEdition,
   LidSticker,
   OVERFLOW_STICKER_ID,
@@ -91,11 +91,11 @@ const FETCH_PALETTE = [
 // Lid edition finishes.
 const LID_FINISH: Record<
   LidEdition,
-  { bg: string; shadow: number; caption: string; markSize: number }
+  { bg: string; shadow: number; caption: string; markSize: number; markColor: string }
 > = {
-  apple: { bg: "#33302B", shadow: 0.35, caption: "#6B6459", markSize: 150 },
-  microsoft: { bg: "#D8D3CA", shadow: 0.22, caption: "#8A857C", markSize: 132 },
-  linux: { bg: "#16110B", shadow: 0.45, caption: "#6B5D46", markSize: 155 },
+  apple: { bg: "#33302B", shadow: 0.35, caption: "#6B6459", markSize: 150, markColor: "#C9C2B6" },
+  microsoft: { bg: "#D8D3CA", shadow: 0.22, caption: "#8A857C", markSize: 132, markColor: "#8A857C" },
+  linux: { bg: "#16110B", shadow: 0.45, caption: "#6B5D46", markSize: 155, markColor: "#F0E6D2" },
 };
 
 // ---------------------------------------------------------------------------
@@ -1015,8 +1015,7 @@ function SpecLine({
 function LidCard({ data, fonts, k }: ThemeProps) {
   const edition = data.lidEdition;
   const fin = LID_FINISH[edition];
-  const markSrc = data.lidMarkSrc ?? LID_MARK_URL[edition];
-  const stickers = getStickerLayout(data);
+    const stickers = getStickerLayout(data);
   const identity = getIdentityLayout(data);
 
   const caption = `${
@@ -1070,24 +1069,21 @@ function LidCard({ data, fonts, k }: ThemeProps) {
           ))}
         </div>
       ) : (
-        markSrc && (
-          <img
-            src={markSrc}
-            alt=""
-            width={fin.markSize * k}
-            height={fin.markSize * k}
-            style={scaleStyle(
-              {
-                position: "absolute",
-                width: fin.markSize,
-                height: fin.markSize,
-                left: LID_MARK_CX - fin.markSize / 2,
-                top: LID_MARK_CY - fin.markSize / 2,
-              },
-              k
-            )}
-          />
-        )
+        <svg
+          viewBox="0 0 24 24"
+          width={fin.markSize * k}
+          height={fin.markSize * k}
+          style={scaleStyle(
+            {
+              position: "absolute",
+              left: LID_MARK_CX - fin.markSize / 2,
+              top: LID_MARK_CY - fin.markSize / 2,
+            },
+            k
+          )}
+        >
+          <path d={LID_MARK_PATHS[edition]} fill={fin.markColor} />
+        </svg>
       )}
 
       {/* tool stickers */}
