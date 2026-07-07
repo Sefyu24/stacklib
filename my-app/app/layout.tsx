@@ -43,18 +43,47 @@ const clerkAppearance: React.ComponentProps<typeof ClerkProvider>["appearance"] 
       colorInputForeground: "#1C1712",
       colorBorder: "#E8DFCE",
       colorMutedForeground: "#8A7B63",
+      colorRing: "#EC5B13",
       borderRadius: "10px",
       fontFamily: "var(--font-archivo), sans-serif",
     },
     elements: {
       // Chunky ink-outlined card, same recipe as the app's containers.
+      // width/maxWidth keep it inside narrow viewports (auth shells cap it).
       cardBox: {
         border: "1.5px solid #1C1712",
         boxShadow: "0 4px 0 #1C1712",
         backgroundColor: "#FFFDF8",
+        width: "100%",
+        maxWidth: "25rem",
       },
       card: {
         backgroundColor: "#FFFDF8",
+      },
+      headerSubtitle: {
+        color: "#8A7B63",
+      },
+      formFieldLabel: {
+        fontWeight: 600,
+      },
+      // Inputs follow the app's field recipe: 1.5px --input border,
+      // orange on focus (ring color comes from variables.colorRing).
+      formFieldInput: {
+        borderWidth: "1.5px",
+        borderColor: "#DACFB9",
+        "&:focus": {
+          borderColor: "#EC5B13",
+        },
+      },
+      dividerLine: {
+        backgroundColor: "#E8DFCE",
+      },
+      dividerText: {
+        color: "#8A7B63",
+      },
+      // Warm footer strip instead of Clerk's stock gray gradient.
+      footer: {
+        background: "#F9F4EA",
       },
       // Match Button variant="brand": bold pressable CTA with a bottom shadow.
       formButtonPrimary: {
@@ -73,7 +102,8 @@ const clerkAppearance: React.ComponentProps<typeof ClerkProvider>["appearance"] 
         },
       },
       socialButtonsBlockButton: {
-        border: "1.5px solid #E8DFCE",
+        border: "1.5px solid #DACFB9",
+        fontWeight: 600,
         "&:hover": {
           borderColor: "#EC5B13",
         },
