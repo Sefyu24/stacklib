@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { toast } from "sonner";
@@ -9,10 +11,22 @@ import { Id } from "@/convex/_generated/dataModel";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   PaintBoardIcon,
   Share01Icon,
+  PlusSignIcon,
+  Delete02Icon,
 } from "@hugeicons/core-free-icons";
 import { convexErrorMessage } from "@/components/dashboard/profileSection";
 
@@ -23,6 +37,7 @@ const THEME_LABELS: Record<string, string> = {
 };
 
 export default function MyCardsSection() {
+  const router = useRouter();
   const { user, isLoaded } = useUser();
   const ownerId = user?.id;
   const { isAuthenticated } = useConvexAuth();
@@ -31,6 +46,16 @@ export default function MyCardsSection() {
     api.profiles.getMyStacks,
     ownerId && isAuthenticated ? { ownerId } : "skip"
   );
+
+  const createStack = useMutation(api.stacks.createStack);
+  const deleteStack = useMutation(api.stacks.deleteStack);
+
+  // The card queued up for deletion (drives the confirm dialog).
+  const [pendingDelete, setPendingDelete] = useState<{
+    id: Id<"stacks">;
+    name: string;
+  } | null>(null);
+  const [busy, setBusy] = useState(false);
 
   // Optimistic toggle: patch the local getMyStacks result immediately so the
   // switch flips without waiting on the server round-trip.
@@ -65,6 +90,36 @@ export default function MyCardsSection() {
     }
   }
 
+  async function handleNewCard() {
+    if (!ownerId || busy) return;
+    setBusy(true);
+    try {
+      const newId = await createStack({ name: "New card", userId: ownerId });
+      router.push(`/stack/${newId}`);
+    } catch (err) {
+      toast.error(
+        convexErrorMessage(err, "Couldn't create a card. Please try again.")
+      );
+      setBusy(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!pendingDelete || busy) return;
+    setBusy(true);
+    try {
+      await deleteStack({ stackId: pendingDelete.id });
+      toast.success("Card deleted");
+      setPendingDelete(null);
+    } catch (err) {
+      toast.error(
+        convexErrorMessage(err, "Couldn't delete this card. Please try again.")
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
   if (!isLoaded || (ownerId && stacks === undefined)) {
     return (
       <div className="flex h-[40vh] items-center justify-center">
@@ -75,16 +130,27 @@ export default function MyCardsSection() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <p className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
-          Dashboard
-        </p>
-        <h1 className="mt-1 text-[28px] font-black tracking-[-0.02em] text-foreground sm:text-[34px]">
-          My cards
-        </h1>
-        <p className="mt-1 text-[15px] text-[#8A7B63]">
-          Flip a card public to feature it on your profile page.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="font-mono text-[11px] font-bold uppercase tracking-[0.2em] text-primary">
+            Dashboard
+          </p>
+          <h1 className="mt-1 text-[28px] font-black tracking-[-0.02em] text-foreground sm:text-[34px]">
+            My cards
+          </h1>
+          <p className="mt-1 text-[15px] text-[#8A7B63]">
+            Flip a card public to feature it on your profile page.
+          </p>
+        </div>
+        <Button
+          variant="brand"
+          size="sm"
+          onClick={handleNewCard}
+          disabled={busy}
+        >
+          <HugeiconsIcon icon={PlusSignIcon} className="size-3.5" />
+          New card
+        </Button>
       </div>
 
       {!stacks || stacks.length === 0 ? (
@@ -95,11 +161,15 @@ export default function MyCardsSection() {
           <p className="text-[14px] text-[#8A7B63]">
             Build your first stack card — it takes about a minute.
           </p>
-          <Link href="/stack">
-            <Button variant="brand" size="sm">
-              Open the builder
-            </Button>
-          </Link>
+          <Button
+            variant="brand"
+            size="sm"
+            onClick={handleNewCard}
+            disabled={busy}
+          >
+            <HugeiconsIcon icon={PlusSignIcon} className="size-3.5" />
+            New card
+          </Button>
         </div>
       ) : (
         <div className="flex flex-col gap-5">
@@ -131,7 +201,7 @@ export default function MyCardsSection() {
                   </p>
                 )}
                 <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <Link href="/stack">
+                  <Link href={`/stack/${stack.id}`}>
                     <Button variant="outline" size="sm">
                       <HugeiconsIcon icon={PaintBoardIcon} className="size-3.5" />
                       Open in builder
@@ -143,6 +213,17 @@ export default function MyCardsSection() {
                       Share page
                     </Button>
                   </Link>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() =>
+                      setPendingDelete({ id: stack.id, name: stack.name })
+                    }
+                  >
+                    <HugeiconsIcon icon={Delete02Icon} className="size-3.5" />
+                    Delete
+                  </Button>
                 </div>
               </div>
 
@@ -165,6 +246,37 @@ export default function MyCardsSection() {
           ))}
         </div>
       )}
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this card?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingDelete
+                ? `"${pendingDelete.name}" and everything on it will be permanently removed. This can't be undone.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busy}
+              onClick={(e) => {
+                e.preventDefault();
+                handleDelete();
+              }}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              Delete card
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
