@@ -79,20 +79,15 @@ const SAMPLES: PileStack[] = [
         ],
       },
       {
-        name: "Deploy",
-        sectionType: "deploy",
-        count: 3,
+        name: "Other",
+        sectionType: "other",
+        count: 4,
         tools: [
           { name: "DigitalOcean", slug: "digitalocean" },
           { name: "Nginx", slug: "nginx" },
           { name: "Cloudflare", slug: "cloudflare" },
+          { name: "Stripe", slug: "stripe" },
         ],
-      },
-      {
-        name: "Payments",
-        sectionType: "payments",
-        count: 1,
-        tools: [{ name: "Stripe", slug: "stripe" }],
       },
     ],
   },
@@ -126,8 +121,8 @@ const SAMPLES: PileStack[] = [
         ],
       },
       {
-        name: "Deploy",
-        sectionType: "deploy",
+        name: "Other",
+        sectionType: "other",
         count: 1,
         tools: [{ name: "Vercel", slug: "vercel" }],
       },
@@ -142,8 +137,8 @@ const SAMPLES: PileStack[] = [
     tagline: "Neovim, Rust & Go. tmux-driven, built Harpoon.",
     sections: [
       {
-        name: "Editor",
-        sectionType: "editor",
+        name: "IDE",
+        sectionType: "ide",
         count: 2,
         tools: [
           { name: "Neovim", slug: "neovim" },
@@ -151,8 +146,8 @@ const SAMPLES: PileStack[] = [
         ],
       },
       {
-        name: "Languages",
-        sectionType: "languages",
+        name: "Backend",
+        sectionType: "backend",
         count: 3,
         tools: [
           { name: "Rust", slug: "rust" },
@@ -161,8 +156,8 @@ const SAMPLES: PileStack[] = [
         ],
       },
       {
-        name: "Tools",
-        sectionType: "tools",
+        name: "Other",
+        sectionType: "other",
         count: 1,
         tools: [{ name: "Git", slug: "git" }],
       },

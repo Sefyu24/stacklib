@@ -18,14 +18,15 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CardRenderData } from "@/lib/card/render";
-import { CardArt, PREVIEW_CARD_FONTS } from "@/components/card/cardArt";
-import ScaledCard from "@/components/card/scaledCard";
+import { Id } from "@/convex/_generated/dataModel";
 
 export default function SharePreviewDialog({
   data,
+  stackId,
   onShareOnX,
 }: {
   data: CardRenderData;
+  stackId: Id<"stacks">;
   onShareOnX: () => void;
 }) {
   const displayName = data.authorName || data.stackName;
@@ -83,10 +84,17 @@ export default function SharePreviewDialog({
             just shipped my stack &rarr;
           </p>
 
-          {/* the link card: real art + domain bar */}
+          {/* The link card: the ACTUAL share PNG (exactly what X unfurls),
+              not an in-browser re-render — bulletproof sizing, no scaling
+              math that can misfire inside the animated dialog. */}
           <div className="mt-2.5 overflow-hidden rounded-[14px] border border-[#E8DFCE]">
-            <ScaledCard
-              render={() => <CardArt data={data} fonts={PREVIEW_CARD_FONTS} />}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/api/card/${stackId}?scale=2`}
+              alt={`${data.stackName} card preview`}
+              width={1200}
+              height={630}
+              className="block aspect-[1200/630] w-full bg-[#F6F1E8] object-cover"
             />
             <div className="border-t border-[#E8DFCE] bg-[#F9F4EA] px-3.5 py-2 text-[12px] font-medium text-[#8A7B63]">
               superstacks.dev

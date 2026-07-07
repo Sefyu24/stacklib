@@ -267,17 +267,40 @@ export default function StackCardPreview({
     }
   };
 
-  // Open X's composer with the share link prefilled — X unfurls the card
-  // from the link's OG tags once it loads. On iOS this deep-links to the app.
-  const shareOnX = () => {
+  // Share flow. On mobile we use the native Web Share API — the OS share
+  // sheet lets the user tap the actual X app (the only reliable way to reach
+  // the native app from mobile Safari; no URL scheme can force-open X's
+  // composer). On desktop (or if share is unavailable) we open x.com's
+  // web composer with the link prefilled. Either way X unfurls the card
+  // from the shared URL's OG tags.
+  const shareOnX = async () => {
     const text =
       stack.name && stack.name !== "My Tech Stack"
         ? stack.name
         : "My tech stack";
-    const url = `https://x.com/intent/post?text=${encodeURIComponent(
+    const url = shareUrl();
+
+    const canNativeShare =
+      typeof navigator !== "undefined" &&
+      typeof navigator.share === "function" &&
+      // Coarse pointer ≈ touch device, where the OS share sheet is the win.
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(pointer: coarse)").matches;
+
+    if (canNativeShare) {
+      try {
+        await navigator.share({ text, url });
+        return;
+      } catch (err) {
+        // AbortError = user dismissed the sheet; don't fall through to a tab.
+        if (err instanceof DOMException && err.name === "AbortError") return;
+      }
+    }
+
+    const intent = `https://x.com/intent/post?text=${encodeURIComponent(
       text
-    )}&url=${encodeURIComponent(shareUrl())}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    )}&url=${encodeURIComponent(url)}`;
+    window.open(intent, "_blank", "noopener,noreferrer");
   };
 
   const downloadPng = async () => {
@@ -336,7 +359,7 @@ export default function StackCardPreview({
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
-          <SharePreviewDialog data={data} onShareOnX={shareOnX} />
+          <SharePreviewDialog data={data} stackId={stackId} onShareOnX={shareOnX} />
         </div>
       </div>
 
