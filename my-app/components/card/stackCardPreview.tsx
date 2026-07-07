@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ShuffleIcon } from "@hugeicons/core-free-icons";
+import { NewTwitterIcon, ShuffleIcon } from "@hugeicons/core-free-icons";
 import { DisplaySectionInput } from "@/lib/card/display";
 import {
   buildCardRenderData,
@@ -202,15 +202,28 @@ export default function StackCardPreview({
     ]).catch(() => toast.error("Couldn't save the shuffle"));
   };
 
+  const shareUrl = () => `${window.location.origin}/s/${stackId}`;
+
   const copyLink = async () => {
     try {
-      await navigator.clipboard.writeText(
-        `${window.location.origin}/s/${stackId}`
-      );
+      await navigator.clipboard.writeText(shareUrl());
       toast.success("Share link copied to clipboard");
     } catch {
       toast.error("Couldn't copy the link");
     }
+  };
+
+  // Open X's composer with the share link prefilled — X unfurls the card
+  // from the link's OG tags once it loads. On iOS this deep-links to the app.
+  const shareOnX = () => {
+    const text =
+      stack.name && stack.name !== "My Tech Stack"
+        ? stack.name
+        : "My tech stack";
+    const url = `https://x.com/intent/post?text=${encodeURIComponent(
+      text
+    )}&url=${encodeURIComponent(shareUrl())}`;
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   const downloadPng = async () => {
@@ -258,7 +271,7 @@ export default function StackCardPreview({
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
-          <SharePreviewDialog data={data} />
+          <SharePreviewDialog data={data} onShareOnX={shareOnX} />
         </div>
       </div>
 
@@ -321,13 +334,19 @@ export default function StackCardPreview({
         This is exactly how your card unfurls when shared. Pinned tools show
         first; each section fits 5 on the card.
       </p>
-      <div className="flex gap-2.5">
-        <Button variant="brand" className="flex-1" onClick={copyLink}>
-          Copy share link
+      <div className="flex flex-col gap-2.5">
+        <Button variant="brand" className="w-full gap-2" onClick={shareOnX}>
+          <HugeiconsIcon icon={NewTwitterIcon} className="size-4" />
+          Share on X
         </Button>
-        <Button variant="outline" className="flex-1" onClick={downloadPng}>
-          Download PNG
-        </Button>
+        <div className="flex gap-2.5">
+          <Button variant="outline" className="flex-1" onClick={copyLink}>
+            Copy link
+          </Button>
+          <Button variant="outline" className="flex-1" onClick={downloadPng}>
+            Download PNG
+          </Button>
+        </div>
       </div>
     </div>
   );
