@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { api } from "@/convex/_generated/api";
 import { FunctionReturnType } from "convex/server";
@@ -10,18 +10,19 @@ import {
   ToggleGroupItem,
 } from "@/components/ui/toggle-group";
 import { Button } from "@/components/ui/button";
-import LogoFramework from "@/app/stack/logo-framework";
-import { Logomark, Wordmark } from "@/components/brand/logo";
+import { DisplaySectionInput } from "@/lib/card/display";
+import { buildCardRenderData, CardThemeKey } from "@/lib/card/render";
+import { toolLogoUrl } from "@/lib/logo";
 import {
-  getCardSections,
-  getCardStats,
-  DisplaySectionInput,
-  DisplaySection,
-} from "@/lib/card/display";
+  CardArt,
+  CARD_WIDTH,
+  CARD_HEIGHT,
+  PREVIEW_CARD_FONTS,
+} from "@/components/card/cardArt";
 
 type StackData = FunctionReturnType<typeof api.stacks.getStack>;
 
-export type CardThemeKey = "minimal" | "bento" | "terminal";
+export type { CardThemeKey } from "@/lib/card/render";
 const THEMES: CardThemeKey[] = ["minimal", "bento", "terminal"];
 
 export default function StackCardPreview({
@@ -40,18 +41,29 @@ export default function StackCardPreview({
     if (stack.cardTheme) setTheme(stack.cardTheme as CardThemeKey);
   }, [stack.cardTheme]);
 
-  const sections = getCardSections(
-    stack.sections as unknown as DisplaySectionInput[]
+  // The preview renders the SAME 1200x630 art the PNG route rasterizes —
+  // same assembly, same components — just resolved to plain logo URLs and
+  // scaled down to fit the column. It cannot drift from the download.
+  const data = useMemo(
+    () =>
+      buildCardRenderData(
+        {
+          name: stack.name,
+          subtitle: stack.subtitle,
+          sections: stack.sections as unknown as DisplaySectionInput[],
+          cardTheme: theme,
+          showWatermark: stack.showWatermark,
+          showAvatar: stack.showAvatar,
+          authorName: stack.authorName,
+          authorHandle: stack.authorHandle,
+        },
+        // png:true skips expiring Brandfetch URLs, exactly like the PNG
+        // route, so both fall back to the same letter-tiles.
+        (t) => toolLogoUrl(t, { png: true }),
+        stack.authorAvatarUrl || null
+      ),
+    [stack, theme]
   );
-  const stats = getCardStats(
-    stack.sections as unknown as DisplaySectionInput[]
-  );
-  const statLabel = stats.label;
-  const overflow = stats.overflow;
-  // Until user profiles ship, the share page is the "see everything" target.
-  const moreHref = `/s/${stackId}`;
-  const showWatermark = stack.showWatermark ?? true;
-  const isEmpty = sections.length === 0;
 
   const handleTheme = (v: string) => {
     if (!v) return;
@@ -73,9 +85,10 @@ export default function StackCardPreview({
 
   const downloadPng = async () => {
     try {
-      // Bust the browser HTTP cache so the download always reflects the
-      // current stack (the OG route is edge-cacheable for sharing).
-      const res = await fetch(`/api/card/${stackId}?t=${Date.now()}`, {
+      // scale=2 → 2400x1260 so the PNG stays sharp on retina screens and
+      // social zoom; t busts the browser HTTP cache so the download always
+      // reflects the current stack (the OG route is edge-cacheable).
+      const res = await fetch(`/api/card/${stackId}?scale=2&t=${Date.now()}`, {
         cache: "no-store",
       });
       const blob = await res.blob();
@@ -116,54 +129,9 @@ export default function StackCardPreview({
         </ToggleGroup>
       </div>
 
-      {theme === "minimal" && (
-        <CardMinimal
-          stackName={stack.name}
-          statLabel={statLabel}
-          sections={sections}
-          showWatermark={showWatermark}
-          isEmpty={isEmpty}
-          overflow={overflow}
-          moreHref={moreHref}
-          subtitle={stack.subtitle || undefined}
-          authorName={stack.authorName}
-          authorHandle={stack.authorHandle}
-          avatarSrc={stack.authorAvatarUrl || null}
-          showAvatar={stack.showAvatar ?? true}
-        />
-      )}
-      {theme === "bento" && (
-        <CardBento
-          stackName={stack.name}
-          statLabel={statLabel}
-          sections={sections}
-          showWatermark={showWatermark}
-          isEmpty={isEmpty}
-          overflow={overflow}
-          moreHref={moreHref}
-          subtitle={stack.subtitle || undefined}
-          authorName={stack.authorName}
-          authorHandle={stack.authorHandle}
-          avatarSrc={stack.authorAvatarUrl || null}
-          showAvatar={stack.showAvatar ?? true}
-        />
-      )}
-      {theme === "terminal" && (
-        <CardTerminal
-          stackName={stack.name}
-          statLabel={statLabel}
-          sections={sections}
-          showWatermark={showWatermark}
-          isEmpty={isEmpty}
-          overflow={overflow}
-          moreHref={moreHref}
-          subtitle={stack.subtitle || undefined}
-          authorName={stack.authorName}
-          authorHandle={stack.authorHandle}
-          avatarSrc={stack.authorAvatarUrl || null}
-          showAvatar={stack.showAvatar ?? true}
-        />
-      )}
+      <ScaledCard>
+        <CardArt data={data} fonts={PREVIEW_CARD_FONTS} />
+      </ScaledCard>
 
       <p className="text-[12.5px] leading-relaxed text-[#8A7B63]">
         This is exactly how your card unfurls when shared. Pinned tools show
@@ -181,337 +149,47 @@ export default function StackCardPreview({
   );
 }
 
-interface CardProps {
-  stackName: string;
-  statLabel: string;
-  sections: DisplaySection[];
-  showWatermark: boolean;
-  isEmpty: boolean;
-  /** Tools that didn't fit on the card */
-  overflow: number;
-  /** Where "+K more" points (full profile / share page) */
-  moreHref: string;
-  /** Optional one-line tagline rendered under the title */
-  subtitle?: string;
-  authorName?: string;
-  authorHandle?: string;
-  /** Resolved avatar image source */
-  avatarSrc?: string | null;
-  showAvatar?: boolean;
-}
+/**
+ * Scale-to-fit stage: the card art is a fixed 1200x630 design, so we measure
+ * the available width and shrink the whole thing with a transform — the
+ * preview shows the exact pixels of the PNG at every container size.
+ */
+function ScaledCard({ children }: { children: React.ReactNode }) {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(0);
+  useLayoutEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const fit = () => {
+      const w = el.clientWidth;
+      // w === 0 means the stage is hidden (display:none breakpoints) — keep
+      // the last real width instead of collapsing the card to nothing.
+      if (w > 0) setWidth(w);
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
-function IdentityRow({
-  authorName,
-  authorHandle,
-  avatarSrc,
-  showAvatar,
-  handleClassName,
-}: {
-  authorName?: string;
-  authorHandle?: string;
-  avatarSrc?: string | null;
-  showAvatar?: boolean;
-  handleClassName: string;
-}) {
-  if (!authorName && !authorHandle) return null;
   return (
-    <div className="mt-2 flex items-center gap-2">
-      {showAvatar !== false && avatarSrc && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={avatarSrc}
-          alt=""
-          className="size-[18px] rounded-full object-cover"
-        />
-      )}
-      {authorName && (
-        <span className="text-[12px] font-semibold text-foreground">
-          {authorName}
-        </span>
-      )}
-      {authorHandle && (
-        <span className={`font-mono text-[10.5px] ${handleClassName}`}>
-          @{authorHandle}
-        </span>
-      )}
-    </div>
-  );
-}
-
-function MoreChip({
-  overflow,
-  moreHref,
-  className,
-}: {
-  overflow: number;
-  moreHref: string;
-  className?: string;
-}) {
-  if (overflow <= 0) return null;
-  return (
-    <a
-      href={moreHref}
-      className={
-        "inline-flex w-fit items-center rounded-[7px] border border-dashed border-[#D9A16B] px-[9px] py-1 text-[11.5px] font-semibold text-primary hover:bg-[#FDF1E6] " +
-        (className ?? "")
-      }
+    <div
+      ref={stageRef}
+      className="w-full overflow-hidden"
+      style={{ aspectRatio: `${CARD_WIDTH} / ${CARD_HEIGHT}` }}
     >
-      +{overflow} more
-    </a>
-  );
-}
-
-function EmptyNote() {
-  return (
-    <div className="flex flex-col items-center gap-1 py-8 text-center">
-      <span className="text-[15px] font-bold text-foreground">
-        This stack is still brewing
-      </span>
-      <span className="text-[12px] text-[#B4A78E]">
-        Add tools to see your card
-      </span>
-    </div>
-  );
-}
-
-function CardMinimal({
-  stackName,
-  statLabel,
-  sections,
-  showWatermark,
-  isEmpty,
-  overflow,
-  moreHref,
-  subtitle,
-  authorName,
-  authorHandle,
-  avatarSrc,
-  showAvatar,
-}: CardProps) {
-  return (
-    <div className="rounded-[18px] border-[1.5px] border-foreground bg-[#FBF7F0] p-2.5 shadow-[0_4px_0_var(--foreground)]">
-      <div className="rounded-xl border border-[#EDE4D2] bg-card px-6 pb-4 pt-[22px]">
-        <div className="flex items-baseline justify-between gap-3">
-          <Wordmark size={13} color="#EC5B13" />
-          <span className="font-mono text-[10px] text-[#B4A78E]">
-            {statLabel}
-          </span>
-        </div>
-        <IdentityRow
-          authorName={authorName}
-          authorHandle={authorHandle}
-          avatarSrc={avatarSrc}
-          showAvatar={showAvatar}
-          handleClassName="text-[#B4A78E]"
-        />
-        <div className="my-2 mb-3.5 text-[24px] font-black tracking-[-0.02em]">
-          {stackName}
-        </div>
-        {subtitle && (
-          <div className="-mt-2 mb-3 text-[12px] font-medium text-[#8A7B63]">
-            {subtitle}
-          </div>
-        )}
-        {isEmpty ? (
-          <EmptyNote />
-        ) : (
-          <div className="flex flex-col gap-[11px]">
-            {sections.map((cs) => (
-              <div key={cs.sectionType}>
-                <div className="mb-[5px] font-mono text-[8.5px] font-bold uppercase tracking-[0.2em] text-[#B4A78E]">
-                  {cs.name}
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {cs.tools.map((ct) => (
-                    <span
-                      key={ct.toolId}
-                      className="inline-flex items-center gap-1.5 rounded-[7px] border border-[#F0DCC2] bg-[#FFF8F0] px-[9px] py-1 text-[11.5px] font-semibold text-foreground"
-                    >
-                      <LogoFramework
-                        name={ct.name}
-                        slug={ct.iconSlug}
-                        src={ct.logoUrl}
-                        url={ct.url || undefined}
-                        size={13}
-                      />
-                      {ct.name}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-            <MoreChip overflow={overflow} moreHref={moreHref} />
-          </div>
-        )}
-        {showWatermark && (
-          <div className="mt-4 flex items-center justify-between border-t border-[#EDE4D2] pt-2.5">
-            <span className="font-mono text-[9.5px] text-[#B4A78E]">
-              superstack.app
-            </span>
-            <Logomark size={14} />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function CardBento({
-  stackName,
-  statLabel,
-  sections,
-  showWatermark,
-  isEmpty,
-  overflow,
-  moreHref,
-  subtitle,
-  authorName,
-  authorHandle,
-  avatarSrc,
-  showAvatar,
-}: CardProps) {
-  // Grouped by category: one label per section, tiles below, and the grid
-  // grows vertically — no flat 9-cell cap, so no tool is ever dropped.
-  return (
-    <div className="rounded-[18px] border-[1.5px] border-foreground bg-[#F3E8D6] px-[22px] pb-4 pt-[22px] shadow-[0_4px_0_var(--foreground)]">
-      <div className="mb-1 flex items-baseline justify-between gap-3">
-        <Wordmark size={13} color="#EC5B13" />
-        <span className="font-mono text-[10px] text-[#A0713C]">
-          {statLabel}
-        </span>
-      </div>
-      <IdentityRow
-        authorName={authorName}
-        authorHandle={authorHandle}
-        avatarSrc={avatarSrc}
-        showAvatar={showAvatar}
-        handleClassName="text-[#A0713C]"
-      />
-      <div className="mb-3.5 text-[24px] font-black tracking-[-0.02em]">
-        {stackName}
-      </div>
-      {subtitle && (
-        <div className="-mt-2 mb-3 text-[12px] font-medium text-[#8A7B63]">
-          {subtitle}
+      {width > 0 && (
+        <div
+          style={{
+            width: CARD_WIDTH,
+            height: CARD_HEIGHT,
+            transform: `scale(${width / CARD_WIDTH})`,
+            transformOrigin: "top left",
+          }}
+        >
+          {children}
         </div>
       )}
-      {isEmpty ? (
-        <EmptyNote />
-      ) : (
-        <div className="flex flex-col gap-2">
-          {/* One column per section, kanban-style, matching the OG render */}
-          <div
-            className="grid items-stretch gap-1.5"
-            style={{
-              gridTemplateColumns: `repeat(${Math.max(sections.length, 1)}, minmax(0, 1fr))`,
-            }}
-          >
-            {sections.map((cs) => (
-              <div
-                key={cs.sectionType}
-                className="flex min-w-0 flex-col gap-1.5 rounded-lg border border-[#E4D5BB] bg-[#FFFDF8]/45 p-1.5"
-              >
-                <div className="truncate text-center font-mono text-[7px] font-bold uppercase tracking-[0.14em] text-[#A0713C]">
-                  {cs.name}
-                </div>
-                {cs.tools.map((bt) => (
-                  <div
-                    key={bt.toolId}
-                    className="flex min-w-0 items-center gap-1 rounded-md border border-[#E4D5BB] bg-card px-1.5 py-1"
-                  >
-                    <LogoFramework
-                      name={bt.name}
-                      slug={bt.iconSlug}
-                      src={bt.logoUrl}
-                      url={bt.url || undefined}
-                      size={13}
-                    />
-                    <span className="truncate text-[8.5px] font-bold text-foreground">
-                      {bt.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-          <MoreChip overflow={overflow} moreHref={moreHref} />
-        </div>
-      )}
-      {showWatermark && (
-        <div className="mt-3 flex justify-center">
-          <span className="font-mono text-[9.5px] text-[#A0713C]">
-            superstack.app
-          </span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function CardTerminal({
-  stackName,
-  statLabel,
-  sections,
-  showWatermark,
-  isEmpty,
-  overflow,
-  subtitle,
-  authorName,
-  authorHandle,
-}: CardProps) {
-  const terminalTitle = `${stackName.toLowerCase().replace(/\s+/g, "-")}.sh`;
-  return (
-    <div className="overflow-hidden rounded-[18px] border-[1.5px] border-foreground bg-[#16110B] shadow-[0_4px_0_var(--foreground)]">
-      <div className="flex items-center gap-1.5 border-b border-[#2C2418] px-4 py-[11px]">
-        <span className="size-[9px] rounded-full bg-[#E5533C]" />
-        <span className="size-[9px] rounded-full bg-[#E5A93C]" />
-        <span className="size-[9px] rounded-full bg-[#5BA35B]" />
-        <span className="ml-auto font-mono text-[9.5px] text-[#6B5D46]">
-          {terminalTitle}
-        </span>
-      </div>
-      <div className="px-5 pb-4 pt-[18px] font-mono text-[12px] leading-[2]">
-        <div className="text-[#C9BCA2]">
-          <span className="text-primary">~</span>{" "}
-          <span className="text-[#5BA35B]">$</span> superstack show{" "}
-          <span className="text-[#8A7B63]">--pinned</span>
-        </div>
-        {subtitle && <div className="text-[#6B5D46]"># {subtitle}</div>}
-        {(authorHandle || authorName) && (
-          <div className="text-[#6B5D46]">
-            # by {authorHandle ? `@${authorHandle}` : authorName}
-          </div>
-        )}
-        {isEmpty ? (
-          <div className="text-[#6B5D46]">
-            # no tools yet — add some to build your stack
-          </div>
-        ) : (
-          <>
-            {sections.map((cs) => (
-              <div key={cs.sectionType}>
-                <span className="text-primary">
-                  {cs.sectionType.padEnd(8)}
-                </span>
-                <span className="text-[#4A3F2E]"> › </span>
-                <span className="text-[#F0E6D2]">
-                  {cs.tools.map((t) => t.name).join(" · ")}
-                </span>
-              </div>
-            ))}
-            <div className="text-[#5BA35B]">✓ {statLabel}</div>
-            {overflow > 0 && (
-              <div className="text-[#6B5D46]"># +{overflow} more on superstack.app</div>
-            )}
-          </>
-        )}
-        {showWatermark && (
-          <div className="text-[#6B5D46]">
-            superstack.app
-            <span className="ml-1.5 inline-block h-[13px] w-[7px] animate-[blink_1.1s_step-end_infinite] bg-primary align-[-2px]" />
-          </div>
-        )}
-      </div>
     </div>
   );
 }
