@@ -79,6 +79,72 @@
   }
 }
 
+/* Landing "community pile" cards (components/landing/communityPile.tsx).
+   Same loose-pile silhouette as the browse cards, but the fan is driven by an
+   explicit toggle: each card carries data-open="true|false" (React state +
+   Hugeicons/pointer toggle button), so it opens on TAP (mobile) as well as on
+   hover (desktop, fine pointer). Reduced-motion users always get the open
+   column with no animation. Geometry vars are computed per stack. */
+.commpile {
+  position: relative;
+  margin-top: 18px;
+  height: var(--closed-h);
+}
+.commpile-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--closed-top);
+  transform: rotate(var(--angle));
+}
+
+/* Motion allowed: animate open/closed and let hover fan the pile too. */
+@media (prefers-reduced-motion: no-preference) {
+  .commpile {
+    transition: height 450ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .commpile-layer {
+    transition:
+      top 450ms cubic-bezier(0.22, 1, 0.36, 1),
+      transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
+    transition-delay: var(--close-delay);
+  }
+  /* Explicit open (tap / toggle button) */
+  .commpile-card[data-open="true"] .commpile {
+    height: var(--open-h);
+  }
+  .commpile-card[data-open="true"] .commpile-layer {
+    top: var(--open-top);
+    transform: rotate(0deg);
+    transition-delay: var(--open-delay);
+  }
+}
+
+/* Desktop, fine pointer, motion: hover also fans the pile open. */
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .commpile-card:hover .commpile,
+  .commpile-card:focus-within .commpile {
+    height: var(--open-h);
+  }
+  .commpile-card:hover .commpile-layer,
+  .commpile-card:focus-within .commpile-layer {
+    top: var(--open-top);
+    transform: rotate(0deg);
+    transition-delay: var(--open-delay);
+  }
+}
+
+/* Reduced motion: no animation, always render the tidy open column. */
+@media (prefers-reduced-motion: reduce) {
+  .commpile {
+    height: var(--open-h);
+  }
+  .commpile-layer {
+    top: var(--open-top);
+    transform: rotate(0deg);
+  }
+}
+
 :root {
   /* Height of the sticky app navbar (components/navbar1.tsx). The <header>
      sizes itself from this token; anything that offsets itself under the

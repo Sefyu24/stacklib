@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
 import Playground from "@/components/landing/playground";
 import HeroCards from "@/components/landing/heroCards";
+import CommunityPile from "@/components/landing/communityPile";
 import { Logomark, Wordmark } from "@/components/brand/logo";
 
 // Design-exact inline glyphs (server-safe; the design ships these SVG paths)
@@ -21,7 +22,9 @@ function DragDots() {
 const PIN_PATH =
   "M16 3a1 1 0 0 1 .95.68l.54 1.62 2.21 2.21 1.62.54a1 1 0 0 1 .39 1.66l-4.24 4.24-.7 4.25a1 1 0 0 1-1.7.54L12 15.7l-4.95 4.95a1 1 0 0 1-1.41-1.41L10.59 14.3 6.5 10.24a1 1 0 0 1 .54-1.7l4.25-.7L15.53 3.6A1 1 0 0 1 16 3Z";
 
-const si = (slug: string) => `https://cdn.simpleicons.org/${slug}`;
+// Self-hosted Brandfetch PNGs live in public/hero-icons/<slug>.png. Every slug
+// referenced on this landing page ships a file there (Brandfetch-only, no CDN).
+const si = (slug: string) => `/hero-icons/${slug}.png`;
 
 function Icon({ slug, size }: { slug: string; size: number }) {
   return (
@@ -36,15 +39,6 @@ function Icon({ slug, size }: { slug: string; size: number }) {
 function MiniChip({ slug, label }: { slug: string; label: string }) {
   return (
     <span className="inline-flex items-center gap-[5px] rounded-md border border-[#F0DCC2] bg-[#FFF8F0] px-2 py-[3px] text-[10.5px] font-semibold">
-      <Icon slug={slug} size={12} />
-      {label}
-    </span>
-  );
-}
-
-function CommunityChip({ slug, label }: { slug: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-[5px] rounded-md border border-[#EDE4D2] bg-[#F9F4EA] px-[9px] py-1 text-[11px] font-semibold">
       <Icon slug={slug} size={12} />
       {label}
     </span>
@@ -194,83 +188,7 @@ export default function Home() {
               Browse all stacks →
             </Link>
           </div>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {[
-              {
-                initial: "M",
-                bg: "bg-primary",
-                handle: "maker.mia",
-                meta: "indie SaaS · 9 tools",
-                chips: [
-                  ["nextdotjs", "Next.js"],
-                  ["supabase", "Supabase"],
-                  ["stripe", "Stripe"],
-                ],
-                more: "+6",
-                quote:
-                  "“Boring stack, fast shipping. Everything talks to everything.”",
-              },
-              {
-                initial: "D",
-                bg: "bg-foreground",
-                handle: "dev.theo",
-                meta: "full-stack · 11 tools",
-                chips: [
-                  ["svelte", "Svelte"],
-                  ["go", "Go"],
-                  ["postgresql", "Postgres"],
-                ],
-                more: "+8",
-                quote: "“Zero JS frameworks on the backend. Go + Postgres forever.”",
-              },
-              {
-                initial: "K",
-                bg: "bg-[#5BA35B]",
-                handle: "kai.learns",
-                meta: "student · 7 tools",
-                chips: [
-                  ["react", "React"],
-                  ["firebase", "Firebase"],
-                  ["claude", "Claude"],
-                ],
-                more: "+4",
-                quote:
-                  "“First stack card for my portfolio — recruiters actually clicked it.”",
-              },
-            ].map((card) => (
-              <div
-                key={card.handle}
-                className="flex flex-col gap-3.5 rounded-2xl border border-border bg-card p-[22px] transition-colors hover:border-primary"
-              >
-                <div className="flex items-center gap-[11px]">
-                  <span
-                    className={`flex size-9 items-center justify-center rounded-[10px] text-[15px] font-black text-primary-foreground ${card.bg}`}
-                  >
-                    {card.initial}
-                  </span>
-                  <span className="flex flex-col gap-px">
-                    <span className="text-[14.5px] font-extrabold">
-                      {card.handle}
-                    </span>
-                    <span className="font-mono text-[10px] text-[#B4A78E]">
-                      {card.meta}
-                    </span>
-                  </span>
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5">
-                  {card.chips.map(([slug, label]) => (
-                    <CommunityChip key={slug} slug={slug} label={label} />
-                  ))}
-                  <span className="font-mono text-[10px] text-[#B4A78E]">
-                    {card.more}
-                  </span>
-                </div>
-                <span className="text-[12.5px] leading-relaxed text-[#8A7B63]">
-                  {card.quote}
-                </span>
-              </div>
-            ))}
-          </div>
+          <CommunityPile />
         </div>
       </section>
 

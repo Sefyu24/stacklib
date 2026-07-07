@@ -17,7 +17,10 @@ import {
 } from "@/lib/catalog";
 import { Logomark, Wordmark } from "@/components/brand/logo";
 
-const si = (slug: string) => `https://cdn.simpleicons.org/${slug}`;
+// Self-hosted Brandfetch PNGs (public/hero-icons/<slug>.png). Catalog tools
+// surfaced by SEARCH may have no file here — ToolIcon layers this image over a
+// letter tile, so a missing PNG simply reveals the letter (never a CDN call).
+const si = (slug: string) => `/hero-icons/${slug}.png`;
 
 const POPULAR = [
   "React",
