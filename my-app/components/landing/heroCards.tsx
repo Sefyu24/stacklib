@@ -30,11 +30,12 @@ const CARD_W = 344;
 const CARD_H = Math.round((CARD_W * CARD_HEIGHT) / CARD_WIDTH); // true 1.9:1
 
 // Sample stack (maker.mia — 11 tools, 4 sections) driving all three themes.
-// Logos are SELF-HOSTED (public/hero-icons) — the hero renders ~30 logos at
-// once, which overwhelmed cdn.simpleicons.org and left broken boxes in prod.
-const T = (name: string, iconSlug: string) => ({
-  toolId: iconSlug,
-  tool: { name, url: "", logoUrl: `/hero-icons/${iconSlug}.svg`, iconSlug },
+// Logos are the REAL Brandfetch marks (captured from Convex storage),
+// self-hosted in public/hero-icons so the static landing renders ~30 at
+// once without any runtime dependency — same brand logos as real cards.
+const T = (name: string, slug: string) => ({
+  toolId: slug,
+  tool: { name, url: "", logoUrl: `/hero-icons/${slug}.png` },
 });
 const section = (
   name: string,
