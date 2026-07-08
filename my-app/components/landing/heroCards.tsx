@@ -26,7 +26,12 @@ import { toolLogoUrl } from "@/lib/logo";
  * they ARE the product's CardArt, so the hero can never drift from the
  * actual share cards.
  */
-const CARD_W = 460;
+// Base footprint = the FRONT card's real on-screen size. Rendering the front
+// at scale 1 (native) keeps its text crisp for reading; the back cards are the
+// same art scaled DOWN (always sharp). Front is ~2x a back card. Sized so the
+// whole front card stays visible between the headline and the viewport edge —
+// readability needs every section on screen, so we don't let it clip.
+const CARD_W = 700;
 const CARD_H = Math.round((CARD_W * CARD_HEIGHT) / CARD_WIDTH); // true 1.9:1
 
 // Sample stack (maker.mia — 11 tools, 4 sections) driving all three themes.
@@ -140,9 +145,13 @@ function HeroCard({ data }: { data: CardRenderData }) {
  * Slot 0 = front card; 1 = upper right; 2 = upper left.
  */
 const SLOTS = [
-  { x: 0, y: 50, rot: -1, scale: 1.04, z: 30, dim: 1 },
-  { x: 208, y: -104, rot: 5, scale: 0.86, z: 20, dim: 0.92 },
-  { x: -208, y: -104, rot: -6, scale: 0.86, z: 10, dim: 0.92 },
+  // Front: full size, near-flat, nudged right so the big card clears the
+  // headline on its left. Slot 1/2: the same card scaled to ~half, peeking
+  // out behind the front's top corners. The 850ms transform transition makes
+  // the incoming card grow and the outgoing one shrink as they swap.
+  { x: 40, y: 24, rot: -1.5, scale: 1, z: 30, dim: 1 },
+  { x: 300, y: -140, rot: 6, scale: 0.54, z: 20, dim: 0.86 },
+  { x: -230, y: -140, rot: -7, scale: 0.54, z: 10, dim: 0.85 },
 ];
 
 const FLOAT = [
